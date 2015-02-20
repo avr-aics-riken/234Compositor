@@ -1,0 +1,87 @@
+/**********************************************************/
+/**
+* 234Compositor - Image data merging library
+*
+* Copyright (c) 2013-2015 Advanced Institute for Computational Science, RIKEN.
+* All rights reserved.
+*
+**/
+/**********************************************************/
+
+
+SOFTWARE REQUIREMENT
+====================
+- MPI library
+
+
+HOW TO COMPILE
+==============
+
+$ ./configure [options]
+$ make
+# make install
+
+
+Configure options:
+ 
+ --host=hostname
+    Specify in case of cross-compilation.
+
+ --prefix=INSTALL_DIR
+    Install directory path.  If omitted, default is /usr/local/PMlib.
+
+ --with-example=(no|yes)
+    Turn on to build examples. Default setting is 'no'.
+
+ --with-ompi=OPENMPI_DIR
+    If the OpenMPI library is used, specify the directory path that OpenMPI library is
+    installed. This option will be required to use a native compiler. Instead, if the 
+    wrapper compiler, e.g., mpicxx, is used to compile, this options can be eliminated.
+
+ --with-papi=PAPI_DIR or yes
+    If you want to use the PAPI library, specify the directory where the library is installed.
+    In the case of compilation on K front-end, sprcifiy the directory. Use 'yes' for when you
+    compile on compute nodes.
+
+ CC=CC_COMPILER
+    Specify a C compiler, e.g., cc, icc, xlc or others.
+
+ CFLAGS=C_OPTIONS
+    Specify compiler options.
+
+
+
+Here is examples.
+
+# Using GNU compiler and openmpi, Specify install directory, MPI_GATHER version
+
+  $ ./configure --prefix=/usr/local/lib234Compositor --with-ompi=/opt/openmpi CC=mpicc CFLAGS="-O3 -std=gnu99 -Wall"
+
+
+# Using wrapper compiler (GNU), MPI_GATHERV version, with openmp
+
+$ ./configure CC=mpicc CFLAGS="-O3 -std=gnu99 -Wall -D _GATHERV -fopenmp"
+
+
+# Using a wrapper compiler (INTEL) with openmp
+
+  $ ./configure CC=mpicc CFLAGS="-O3 -openmp"
+
+
+# Using a wrapper compiler (Intel), examples
+
+  $ ./configure CC=mpicc CFLAGS="-O3 -openmp" --with-example=yes
+
+
+# FX, K computer, compilation on login nodes
+
+  $ ./configure --prefix=hogehoge \
+                --host=sparc64-unknown-linux-gnu \
+                --with-example=yes \
+                CC=mpifccpx \
+                CFLAGS="-Kfast,parallel,openmp -Xg -std=c99 -Nrt_notune"
+
+
+If you try to install process again, execute 'make distclean' then configure.
+
+

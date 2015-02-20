@@ -1,0 +1,53 @@
+##############################################################################
+#
+# 234Compositor - Image data merging library
+#
+# Copyright (c) 2013-2015 Advanced Institute for Computational Science, RIKEN.
+# All rights reserved.
+#
+##############################################################################
+
+CC = mpicc
+
+# MPI_GATHER Version
+CFLAGS	 = -O3 -std=gnu99 -Wall 
+
+# MPI_GATHERV Version
+#CFLAGS	 = -O3 -std=gnu99 -Wall -D _GATHERV
+
+# OpenMP
+OMPFLAGS = -fopenmp
+
+LIBS = -lm
+
+# =======================
+INCLUDE_DIR = ./include
+SOURCE_DIR  = ./src
+LIB_DIR     = ./lib  
+# =======================
+
+OBJS_LIB = misc.o exchange.o merge.o 234compositor.o 
+	  
+AR      = ar
+RANLIB  = ranlib
+ARFLAG  = crsv
+LIBFILE = lib234comp.a 
+
+RM      = rm -f
+MV	= mv  	  
+
+$(LIBFILE): $(OBJS_LIB) 
+	$(AR) $(ARFLAG) $(LIBFILE) $(OBJS_LIB)
+	$(RANLIB) $(LIBFILE)
+	$(RM) $(OBJS_LIB) 
+	$(MV) $(LIBFILE) $(LIB_DIR)	
+	@echo "lib234comp.a created successfully."
+
+%.o: $(SOURCE_DIR)/%.c
+	$(CC) $(CFLAGS) $(OMPFLAGS) -I$(INCLUDE_DIR) -c $<
+
+all: $(LIBFILE)
+	$(RM) *.o
+
+clean:
+	$(RM) *.o *~ core
