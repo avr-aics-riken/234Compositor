@@ -13,5 +13,9 @@ REVISION HISTORY
 ================
 
 ------------------
-2015-20-20
+2015-02-23
+update sample code, user guide, and Makefile.am in sample
+
+------------------
+2015-02-20
 first package

@@ -90,7 +90,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-noinst_PROGRAMS = test_234byte$(EXEEXT) test_234float$(EXEEXT)
+noinst_PROGRAMS = test_234byte_mandel$(EXEEXT) \
+	test_234float_mandel$(EXEEXT)
 subdir = sample
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(dist_noinst_DATA)
@@ -103,16 +104,18 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_test_234byte_OBJECTS = test_234byte-test_234byte.$(OBJEXT)
-test_234byte_OBJECTS = $(am_test_234byte_OBJECTS)
-test_234byte_DEPENDENCIES =
-test_234byte_LINK = $(CCLD) $(test_234byte_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_test_234float_OBJECTS = test_234float-test_234float.$(OBJEXT)
-test_234float_OBJECTS = $(am_test_234float_OBJECTS)
-test_234float_DEPENDENCIES =
-test_234float_LINK = $(CCLD) $(test_234float_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_test_234byte_mandel_OBJECTS =  \
+	test_234byte_mandel-test_234byte_mandel.$(OBJEXT)
+test_234byte_mandel_OBJECTS = $(am_test_234byte_mandel_OBJECTS)
+test_234byte_mandel_DEPENDENCIES =
+test_234byte_mandel_LINK = $(CCLD) $(test_234byte_mandel_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_test_234float_mandel_OBJECTS =  \
+	test_234float_mandel-test_234float_mandel.$(OBJEXT)
+test_234float_mandel_OBJECTS = $(am_test_234float_mandel_OBJECTS)
+test_234float_mandel_DEPENDENCIES =
+test_234float_mandel_LINK = $(CCLD) $(test_234float_mandel_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -145,8 +148,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(test_234byte_SOURCES) $(test_234float_SOURCES)
-DIST_SOURCES = $(test_234byte_SOURCES) $(test_234float_SOURCES)
+SOURCES = $(test_234byte_mandel_SOURCES) \
+	$(test_234float_mandel_SOURCES)
+DIST_SOURCES = $(test_234byte_mandel_SOURCES) \
+	$(test_234float_mandel_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -271,35 +276,35 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-DISTCLEANFILES = *~ test_234byte test_234float
+DISTCLEANFILES = *~ test_234byte_mandel test_234float_mandel
 CLEANFILES = data/*.log
 EXTRA_DIST = \
    compile.sh \
-   test_234byte.c \
-   test_234float.c
+   test_234byte_mandel.c \
+   test_234float_mandel.c
 
-test_234byte_SOURCES = test_234byte.c
-test_234byte_CFLAGS = -I$(top_builddir)/include @MPI_CFLAGS@
-test_234float_SOURCES = test_234float.c
-test_234float_CFLAGS = -I$(top_builddir)/include @MPI_CFLAGS@
+test_234byte_mandel_SOURCES = test_234byte_mandel.c
+test_234byte_mandel_CFLAGS = -I$(top_builddir)/include @MPI_CFLAGS@
+test_234float_mandel_SOURCES = test_234float_mandel.c
+test_234float_mandel_CFLAGS = -I$(top_builddir)/include @MPI_CFLAGS@
 
 # //SO
 # test_LDADD = \
-#     -L$(top_builddir)/src/.libs -l234comp \
+#     -L$(top_builddir)/src -l234comp \
 #     @MPI_LDFLAGS@ \
 #     @MPI_LIBS@ \
 #      -lstdc++
-test_234byte_LDADD = \
+test_234byte_mandel_LDADD = \
      -L$(top_builddir)/src -l234comp \
      @MPI_LDFLAGS@ \
      @MPI_LIBS@
 
-test_234float_LDADD = \
--L$(top_builddir)/src -l234comp \
-@MPI_LDFLAGS@ \
-@MPI_LIBS@
+test_234float_mandel_LDADD = \
+     -L$(top_builddir)/src -l234comp \
+     @MPI_LDFLAGS@ \
+     @MPI_LIBS@
 
-dist_noinst_DATA = input_images
+dist_noinst_DATA = GLUT
 all: all-am
 
 .SUFFIXES:
@@ -338,13 +343,13 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-test_234byte$(EXEEXT): $(test_234byte_OBJECTS) $(test_234byte_DEPENDENCIES) $(EXTRA_test_234byte_DEPENDENCIES) 
-	@rm -f test_234byte$(EXEEXT)
-	$(AM_V_CCLD)$(test_234byte_LINK) $(test_234byte_OBJECTS) $(test_234byte_LDADD) $(LIBS)
+test_234byte_mandel$(EXEEXT): $(test_234byte_mandel_OBJECTS) $(test_234byte_mandel_DEPENDENCIES) $(EXTRA_test_234byte_mandel_DEPENDENCIES) 
+	@rm -f test_234byte_mandel$(EXEEXT)
+	$(AM_V_CCLD)$(test_234byte_mandel_LINK) $(test_234byte_mandel_OBJECTS) $(test_234byte_mandel_LDADD) $(LIBS)
 
-test_234float$(EXEEXT): $(test_234float_OBJECTS) $(test_234float_DEPENDENCIES) $(EXTRA_test_234float_DEPENDENCIES) 
-	@rm -f test_234float$(EXEEXT)
-	$(AM_V_CCLD)$(test_234float_LINK) $(test_234float_OBJECTS) $(test_234float_LDADD) $(LIBS)
+test_234float_mandel$(EXEEXT): $(test_234float_mandel_OBJECTS) $(test_234float_mandel_DEPENDENCIES) $(EXTRA_test_234float_mandel_DEPENDENCIES) 
+	@rm -f test_234float_mandel$(EXEEXT)
+	$(AM_V_CCLD)$(test_234float_mandel_LINK) $(test_234float_mandel_OBJECTS) $(test_234float_mandel_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -352,8 +357,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_234byte-test_234byte.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_234float-test_234float.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_234byte_mandel-test_234byte_mandel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_234float_mandel-test_234float_mandel.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -369,33 +374,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-test_234byte-test_234byte.o: test_234byte.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_CFLAGS) $(CFLAGS) -MT test_234byte-test_234byte.o -MD -MP -MF $(DEPDIR)/test_234byte-test_234byte.Tpo -c -o test_234byte-test_234byte.o `test -f 'test_234byte.c' || echo '$(srcdir)/'`test_234byte.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234byte-test_234byte.Tpo $(DEPDIR)/test_234byte-test_234byte.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234byte.c' object='test_234byte-test_234byte.o' libtool=no @AMDEPBACKSLASH@
+test_234byte_mandel-test_234byte_mandel.o: test_234byte_mandel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_mandel_CFLAGS) $(CFLAGS) -MT test_234byte_mandel-test_234byte_mandel.o -MD -MP -MF $(DEPDIR)/test_234byte_mandel-test_234byte_mandel.Tpo -c -o test_234byte_mandel-test_234byte_mandel.o `test -f 'test_234byte_mandel.c' || echo '$(srcdir)/'`test_234byte_mandel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234byte_mandel-test_234byte_mandel.Tpo $(DEPDIR)/test_234byte_mandel-test_234byte_mandel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234byte_mandel.c' object='test_234byte_mandel-test_234byte_mandel.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_CFLAGS) $(CFLAGS) -c -o test_234byte-test_234byte.o `test -f 'test_234byte.c' || echo '$(srcdir)/'`test_234byte.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_mandel_CFLAGS) $(CFLAGS) -c -o test_234byte_mandel-test_234byte_mandel.o `test -f 'test_234byte_mandel.c' || echo '$(srcdir)/'`test_234byte_mandel.c
 
-test_234byte-test_234byte.obj: test_234byte.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_CFLAGS) $(CFLAGS) -MT test_234byte-test_234byte.obj -MD -MP -MF $(DEPDIR)/test_234byte-test_234byte.Tpo -c -o test_234byte-test_234byte.obj `if test -f 'test_234byte.c'; then $(CYGPATH_W) 'test_234byte.c'; else $(CYGPATH_W) '$(srcdir)/test_234byte.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234byte-test_234byte.Tpo $(DEPDIR)/test_234byte-test_234byte.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234byte.c' object='test_234byte-test_234byte.obj' libtool=no @AMDEPBACKSLASH@
+test_234byte_mandel-test_234byte_mandel.obj: test_234byte_mandel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_mandel_CFLAGS) $(CFLAGS) -MT test_234byte_mandel-test_234byte_mandel.obj -MD -MP -MF $(DEPDIR)/test_234byte_mandel-test_234byte_mandel.Tpo -c -o test_234byte_mandel-test_234byte_mandel.obj `if test -f 'test_234byte_mandel.c'; then $(CYGPATH_W) 'test_234byte_mandel.c'; else $(CYGPATH_W) '$(srcdir)/test_234byte_mandel.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234byte_mandel-test_234byte_mandel.Tpo $(DEPDIR)/test_234byte_mandel-test_234byte_mandel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234byte_mandel.c' object='test_234byte_mandel-test_234byte_mandel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_CFLAGS) $(CFLAGS) -c -o test_234byte-test_234byte.obj `if test -f 'test_234byte.c'; then $(CYGPATH_W) 'test_234byte.c'; else $(CYGPATH_W) '$(srcdir)/test_234byte.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234byte_mandel_CFLAGS) $(CFLAGS) -c -o test_234byte_mandel-test_234byte_mandel.obj `if test -f 'test_234byte_mandel.c'; then $(CYGPATH_W) 'test_234byte_mandel.c'; else $(CYGPATH_W) '$(srcdir)/test_234byte_mandel.c'; fi`
 
-test_234float-test_234float.o: test_234float.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_CFLAGS) $(CFLAGS) -MT test_234float-test_234float.o -MD -MP -MF $(DEPDIR)/test_234float-test_234float.Tpo -c -o test_234float-test_234float.o `test -f 'test_234float.c' || echo '$(srcdir)/'`test_234float.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234float-test_234float.Tpo $(DEPDIR)/test_234float-test_234float.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234float.c' object='test_234float-test_234float.o' libtool=no @AMDEPBACKSLASH@
+test_234float_mandel-test_234float_mandel.o: test_234float_mandel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_mandel_CFLAGS) $(CFLAGS) -MT test_234float_mandel-test_234float_mandel.o -MD -MP -MF $(DEPDIR)/test_234float_mandel-test_234float_mandel.Tpo -c -o test_234float_mandel-test_234float_mandel.o `test -f 'test_234float_mandel.c' || echo '$(srcdir)/'`test_234float_mandel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234float_mandel-test_234float_mandel.Tpo $(DEPDIR)/test_234float_mandel-test_234float_mandel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234float_mandel.c' object='test_234float_mandel-test_234float_mandel.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_CFLAGS) $(CFLAGS) -c -o test_234float-test_234float.o `test -f 'test_234float.c' || echo '$(srcdir)/'`test_234float.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_mandel_CFLAGS) $(CFLAGS) -c -o test_234float_mandel-test_234float_mandel.o `test -f 'test_234float_mandel.c' || echo '$(srcdir)/'`test_234float_mandel.c
 
-test_234float-test_234float.obj: test_234float.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_CFLAGS) $(CFLAGS) -MT test_234float-test_234float.obj -MD -MP -MF $(DEPDIR)/test_234float-test_234float.Tpo -c -o test_234float-test_234float.obj `if test -f 'test_234float.c'; then $(CYGPATH_W) 'test_234float.c'; else $(CYGPATH_W) '$(srcdir)/test_234float.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234float-test_234float.Tpo $(DEPDIR)/test_234float-test_234float.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234float.c' object='test_234float-test_234float.obj' libtool=no @AMDEPBACKSLASH@
+test_234float_mandel-test_234float_mandel.obj: test_234float_mandel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_mandel_CFLAGS) $(CFLAGS) -MT test_234float_mandel-test_234float_mandel.obj -MD -MP -MF $(DEPDIR)/test_234float_mandel-test_234float_mandel.Tpo -c -o test_234float_mandel-test_234float_mandel.obj `if test -f 'test_234float_mandel.c'; then $(CYGPATH_W) 'test_234float_mandel.c'; else $(CYGPATH_W) '$(srcdir)/test_234float_mandel.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_234float_mandel-test_234float_mandel.Tpo $(DEPDIR)/test_234float_mandel-test_234float_mandel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_234float_mandel.c' object='test_234float_mandel-test_234float_mandel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_CFLAGS) $(CFLAGS) -c -o test_234float-test_234float.obj `if test -f 'test_234float.c'; then $(CYGPATH_W) 'test_234float.c'; else $(CYGPATH_W) '$(srcdir)/test_234float.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_234float_mandel_CFLAGS) $(CFLAGS) -c -o test_234float_mandel-test_234float_mandel.obj `if test -f 'test_234float_mandel.c'; then $(CYGPATH_W) 'test_234float_mandel.c'; else $(CYGPATH_W) '$(srcdir)/test_234float_mandel.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

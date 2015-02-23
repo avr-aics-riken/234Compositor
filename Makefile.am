@@ -14,7 +14,7 @@ bin_SCRIPTS    = 234comp-config
 CLEANFILES     = $(bin_SCRIPTS)
 EXTRA_DIST     = 234comp-config.in LICENSE doc/doxygen/Doxyfile \
                  Makefile_hand Makefile_hand.K Makefile_hand.shared
-dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE sample
+dist_data_DATA = AUTHORS COPYING ChangeLog README LICENSE
 
 #ACLOCAL_AMFLAGS = -I m4 // SO
 

@@ -11,7 +11,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.57])
-AC_INIT([234Compositor], [0.9.0], [jorji@riken.jp], [lib234Compositor])
+AC_INIT([234Compositor], [0.9.1], [jorji@riken.jp], [lib234Compositor])
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([include/234compositor.h])
 AC_CONFIG_HEADERS([config.h])
@@ -22,7 +22,7 @@ AC_CONFIG_HEADERS([config.h])
 #
 # revision No.
 #
-CMPSTR_REVISION="20150220_1600"
+CMPSTR_REVISION="20150223_2200"
 AC_SUBST(CMPSTR_REVISION)
 
 
