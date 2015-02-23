@@ -34,14 +34,15 @@ ARFLAG  = crsv
 LIBFILE = lib234comp.a 
 LIB_DIR  =  ../lib  
 
+MKDIR   = mkdir -p
 RM      = rm -f
-MV	= mv  	  
-CHDIR   = cd 
+MV		= mv  	  
 
 $(LIBFILE): $(OBJS_LIB) 
 	$(AR) $(ARFLAG) $(LIBFILE) $(OBJS_LIB)
-	$(RANLIB) $(LIBFILE)
+	$(RANLIB) $(LIBF
 	$(RM) $(OBJS_LIB) 
+	$(MKDIR) $(LIB_DIR)	
 	$(MV) $(LIBFILE) $(LIB_DIR)	
 	@echo "lib234comp.a created successfully."
 
