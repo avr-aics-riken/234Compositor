@@ -727,7 +727,7 @@ int composite_alpha_rgba32f \
 	  BYTE* restrict blend_image, \
 	  unsigned int  image_size )
 #else
- int composite_alpha_rgba64f \
+ int composite_alpha_rgba64 \
  	( BYTE* over_image, \
 	  BYTE* under_image, \
 	  BYTE* blend_image, \
