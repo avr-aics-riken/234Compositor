@@ -23,15 +23,14 @@
 
 #include <assert.h>
 #include <stdio.h>  
-#include <jpeglib.h>
-
-int write_jpeg_image ( char*, BYTE*, unsigned int, unsigned int, unsigned int );
 
 // MPI Library
 #ifndef _MPI_INCLUDE
 	#include <mpi.h>
 	#define _MPI_INCLUDE
 #endif
+
+int write_rgba_image ( char*, BYTE*, unsigned int, unsigned int, unsigned int );
 
 /*=========================================*/
 /**
@@ -43,7 +42,7 @@ int main( int argc, char* argv[] )
 	int rank;
 	int nnodes;
 
-	uint width, height, image_size;
+	unsigned int width, height, image_size;
 
 	BYTE* rgba_image;
 	char* image_filename;
@@ -136,99 +135,52 @@ int main( int argc, char* argv[] )
 
 	if ( rank == 0 ) {
 		image_filename[0] = '\0';		
-		sprintf( image_filename, "output.jpeg" );
-		write_jpeg_image( image_filename, rgba_image, width, height, RGBA32 );
+		sprintf( image_filename, "output_%dx%d.rgba32", (int)width, (int)height );
+		write_rgba_image( image_filename, rgba_image, width, height, RGBA32 );
 	}
 
 	MPI_Finalize();
 	return ( EXIT_SUCCESS );
 }
 
-/*==================================================*/
+/*===========================================================================*/
 /**
- *  @brief Write output JPEG image. 
+ *  @brief Write output RGBA image. 
  *
- *  @param  jpeg_filename [in] Filename 
+ *  @param  rgba_filename [in] Filename 
  *  @param  image         [in] Image to be written
- *  @param  width         [in] Image width
- *  @param  height        [in] Image height
- *  @param  pixel_size    [in] Pixel size
+ *  @param  width         [in]  Image width
+ *  @param  height        [in]  Image height
+ *  @param  pixel_size    [in]  Pixel size
  */
-/*===================================================*/
-int write_jpeg_image \
-		( char* jpeg_filename, \
+/*===========================================================================*/
+int write_rgba_image \
+		( char*  rgba_filename, \
 		  BYTE* image, \
-		  unsigned int  width, \
-		  unsigned int  height, \
-		  unsigned int  pixel_size )
+		  unsigned int width, \
+		  unsigned int height, \
+		  unsigned int pixel_size )
 {
+
+	unsigned int image_size;
 	FILE* out_fp;
-	int i, j;
-
-	BYTE* image_ptr;
-	JSAMPARRAY jpeg_image;
-
-	// JPEG Object
-	// Error Handlers
-    struct jpeg_compress_struct cinfo;
-    struct jpeg_error_mgr jerr;
- 
 	
-	// Default value for the Error Handler
-    cinfo.err = jpeg_std_error( &jerr );
- 
-	// Initialization of JPEG Object
-    jpeg_create_compress( &cinfo );
- 
-	if ( (out_fp = fopen( jpeg_filename, "wb")) == NULL ) 
+	if ( (out_fp = fopen( rgba_filename, "wb")) == NULL ) 
 	{
-		fprintf( stderr, "<<< ERROR >>> Cannot open \"%s\" for writing \n", \
-			     jpeg_filename );
-		exit( EXIT_FAILURE );
+		printf( "<<< ERROR >>> Cannot open \"%s\" for writing \n", \
+			    rgba_filename );
+		return EXIT_FAILURE;
 	}
 
-    jpeg_stdio_dest( &cinfo, out_fp );
- 
-    cinfo.image_width      = width;
-    cinfo.image_height     = height;
-    cinfo.input_components = 3;
-    cinfo.in_color_space   = JCS_RGB;
-    jpeg_set_defaults( &cinfo );
-    jpeg_set_quality( &cinfo, 100, TRUE );
- 
-	// Start Image Compression
-    jpeg_start_compress( &cinfo, TRUE );
- 
-	// Set Image Data
-	image_ptr = image;
+	image_size = width * height * pixel_size;
 
-    jpeg_image = (JSAMPARRAY)malloc( sizeof(JSAMPROW) * cinfo.image_height );
-    for ( i = 0; i < cinfo.image_height; i++ ) {
-        jpeg_image[ i ] = (JSAMPROW)malloc( sizeof(JSAMPLE) * cinfo.image_width * cinfo.input_components );
-        for ( j = 0; j < cinfo.image_width; j++ ) {
-            jpeg_image[ i ][ ( j * 3 ) + 0] = (int)( *image_ptr++ );
-            jpeg_image[ i ][ ( j * 3 ) + 1] = (int)( *image_ptr++ );
-            jpeg_image[ i ][ ( j * 3 ) + 2] = (int)( *image_ptr++ );
-			image_ptr++;
-        }
-    }
+	if ( fwrite( image, image_size, 1, out_fp ) != 1 ) 
+	{
+		printf("<<< ERROR >>> Cannot write image \n" );
+		return EXIT_FAILURE;
+	}
 
-	// Write Image Data
-    jpeg_write_scanlines( &cinfo, jpeg_image, cinfo.image_height );
- 
-	// End Image Compression
-    jpeg_finish_compress( &cinfo );
- 
-	// Destroy JPEG Object
-    jpeg_destroy_compress( &cinfo );
- 
-    for ( i = 0; i < cinfo.image_height; i++ ) {
-        free( jpeg_image[ i ]);
-    }
-
-    free( jpeg_image );
-    fclose( out_fp );
-
-	return ( EXIT_SUCCESS );
+	fclose( out_fp );
+	return EXIT_SUCCESS;
 }
 
