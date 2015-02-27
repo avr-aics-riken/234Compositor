@@ -29,7 +29,9 @@
 #include <math.h>    // ceil, M_LOG2E
 #include <stdio.h>   // printf, fprintf, sprintf, fwrite, FILE
 #include <stdlib.h>  // atoi, free 
+#ifndef HAVE_STDBOOL_H
 #include <stdbool.h> // true, false
+#endif
 
 // C99 Compiler
 #if (__STDC_VERSION__ >= 199901L)
