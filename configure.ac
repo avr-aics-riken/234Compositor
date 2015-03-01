@@ -165,7 +165,7 @@ AC_CHECK_HEADERS([stdlib.h string.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_CHECK_HEADER_STDBOOL
+AC_HEADER_STDBOOL
 AC_C_RESTRICT
 
 # Checks for library functions.
