@@ -32,15 +32,14 @@ AR      = ar
 RANLIB  = ranlib
 ARFLAG  = crsv
 LIBFILE = lib234comp.a 
-LIB_DIR  =  ../lib  
 
 MKDIR   = mkdir -p
 RM      = rm -f
-MV		= mv  	  
+MV	= mv  	  
 
 $(LIBFILE): $(OBJS_LIB) 
 	$(AR) $(ARFLAG) $(LIBFILE) $(OBJS_LIB)
-	$(RANLIB) $(LIBF
+	$(RANLIB) $(LIBFILE)
 	$(RM) $(OBJS_LIB) 
 	$(MKDIR) $(LIB_DIR)	
 	$(MV) $(LIBFILE) $(LIB_DIR)	
