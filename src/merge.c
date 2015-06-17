@@ -327,8 +327,6 @@ int composite_alpha_rgba32f \
 
 	float one_minus_alpha;
 
-	_Bool nonzero = false;
-
 	blend_image_ptr = (BYTE *)blend_image;
 
 	//=====================================
@@ -385,15 +383,6 @@ int composite_alpha_rgba32f \
 		blend_g = clamp_float( blend_g, 0.0f, 1.0f );
 		blend_b = clamp_float( blend_b, 0.0f, 1.0f );
 		blend_a = clamp_float( blend_a, 0.0f, 1.0f );
-
-		if ( nonzero == false ) {
-			if (( over_r != 0 ||  over_g != 0 ||  over_b != 0 )  && ( under_r != 0 ||  under_g != 0 ||  under_b != 0 )) {
-				printf("OVER  RGBA: %d %d %d %d \n", over_r, over_g, over_b, over_a );
-				printf("UNDER RGBA: %d %d %d %d \n", under_r, under_g, under_b, under_a );
-				printf("BLEND RGBA: %d %d %d %d \n", (int)(blend_r*255), (int)(blend_g*255), (int)(blend_b*255), (int)(blend_a*255) );
-				nonzero = true;
-			}
-		}
 
 		blend_image_ptr[ i     ] = (BYTE)( blend_r * 255 ); 
 		blend_image_ptr[ i + 1 ] = (BYTE)( blend_g * 255 ); 
@@ -1333,7 +1322,7 @@ int composite_alpha_rgba32f \
 
 	float one_minus_alpha;
 
-	blend_z = 0;
+	blend_z = 0.0f;
 	full_image_size = image_size * RGBAZ;  // 5 elements
 
 	//=====================================
@@ -1407,7 +1396,7 @@ int composite_alpha_rgba32f \
 		blend_image[ i + 1 ] = (float)blend_g; 
 		blend_image[ i + 2 ] = (float)blend_b; 
 		blend_image[ i + 3 ] = (float)blend_a;
-		blend_image[ i + 4 ] = (float)blend_z;
+		blend_image[ i + 4 ] = (float)over_z;
 	}
 
 	return EXIT_SUCCESS;
