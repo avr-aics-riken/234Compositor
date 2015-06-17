@@ -271,7 +271,11 @@ int Init_234Composition  ( unsigned int, unsigned int, unsigned int, unsigned in
 							   // my_rank, nnodes, width, height, pixel_ID 
 // Do image composition
 int  Do_234Composition  ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, void*, MPI_Comm ); 
-								// my_rank, nnodes, width, height, pixel_ID, merge_ID, *my_image_byte, MPI_COMM 	
+								// my_rank, nnodes, width, height, pixel_ID, merge_ID, *my_image_byte, MPI_COMM 
+
+void* Do_234Composition_Ptr ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, void*, MPI_Comm ); 
+							    // my_rank, nnodes, width, height, pixel_ID, merge_ID, *my_image_byte, MPI_COMM 	
+	
 int Destroy_234Composition ( unsigned int );
 								// pixel_ID )
 
@@ -297,7 +301,7 @@ int  Do_234Composition_FLOAT ( unsigned int, unsigned int, unsigned int, unsigne
 								// my_rank, nnodes, width, height, pixel_ID, *my_image_float,  MPI_COMM 	
 int Destroy_234Composition_FLOAT ( unsigned int );
 //=====================================
-								// pixel_ID )
+
 unsigned int global_my_rank;
 unsigned int global_nnodes;
 
