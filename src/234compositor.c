@@ -94,6 +94,56 @@ int  Do_234Composition ( unsigned int my_rank, unsigned int nnodes, \
 
 /*========================================================*/
 /**
+ *  @brief Do 234 Composition_Ptr 
+ *		   (Returns the pointer of Temporary Buffer)
+ *         (Avoids costly memory copy to my_image) 
+ *
+ *  @param  my_rank        [in]  MPI rank number
+ *  @param  nnodes         [in]  MPI number of nodes
+ *  @param  width          [in]  Image width
+ *  @param  height         [in]  Image height
+ *  @param  pixel_ID       [in]  Pixel type
+ *  @param  rgba_image     [in,out]  Input and Blended Image
+ *  @param  MPI_COMM_COMPOSITION [in]  MPI Communicator for 234 + Binary-Swap
+ */
+/*========================================================*/
+void*  Do_234Composition_Ptr ( unsigned int my_rank, unsigned int nnodes, \
+	  					       unsigned int width, unsigned int height, \
+						 	   unsigned int pixel_ID, unsigned int merge_ID, \
+						 	   void *my_image, MPI_Comm MPI_COMM_COMPOSITION )
+{
+	if (( pixel_ID == ID_RGBA32  ) || ( pixel_ID == ID_RGBA56  ) || ( pixel_ID == ID_RGBA64  ) || \
+	    ( pixel_ID == ID_RGBAZ64 ) || ( pixel_ID == ID_RGBAZ88 ) || ( pixel_ID == ID_RGBAZ96 )) {
+
+			Do_234Composition_BYTE ( my_rank, nnodes, \
+						  	   		 width, height, pixel_ID, \
+						  	     	 (BYTE *)my_image, MPI_COMM_COMPOSITION );
+
+			switch ( pixel_ID ) {
+				case ID_RGBA32 : return (BYTE *)temp_image_rgba32;
+				case ID_RGBA56 : return (BYTE *)temp_image_rgba56;
+				case ID_RGBA64 : return (BYTE *)temp_image_rgba64;
+				case ID_RGBAZ64: return (BYTE *)temp_image_rgbaz64;
+				case ID_RGBAZ88: return (BYTE *)temp_image_rgbaz88;
+				case ID_RGBAZ96: return (BYTE *)temp_image_rgbaz96;
+			}
+	}
+	else if (( pixel_ID == ID_RGBA128  ) || ( pixel_ID == ID_RGBAZ160 )) {
+
+			Do_234Composition_FLOAT ( my_rank, nnodes, \
+						  	   		  width, height, pixel_ID, \
+						  	     	  (float *)my_image, MPI_COMM_COMPOSITION );
+
+			switch ( pixel_ID ) {
+				case ID_RGBA128 : return (float *)temp_image_rgba128;
+				case ID_RGBAZ160: return (float *)temp_image_rgbaz160;
+			}
+	}
+	return EXIT_SUCCESS;
+}
+	
+/*========================================================*/
+/**
  *  @brief Destroy variables and image buffer for 
  *	 	   234 Image  Compositing 
  *         

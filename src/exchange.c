@@ -4707,7 +4707,7 @@ int partial_bswap4_rgba128 ( unsigned int my_rank, unsigned int nnodes, \
 		bs_pair_image_ptr = my_image;
 		bs_blnd_image_ptr = my_image;
 
-		composite_alpha_rgba128 ( bs_recv_image_ptr, bs_pair_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
+		composite_alpha_rgba128 ( bs_pair_image_ptr, bs_recv_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
 		#endif
 	}
 	else if (( my_rank == 1 ) || ( my_rank == 3 )) // RIGHT NODE
