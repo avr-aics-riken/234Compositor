@@ -80,17 +80,37 @@ int  Do_234Composition ( unsigned int my_rank, unsigned int nnodes, \
 {
 	if (( pixel_ID == ID_RGBA32  ) || ( pixel_ID == ID_RGBA56  ) || ( pixel_ID == ID_RGBA64  ) || \
 	    ( pixel_ID == ID_RGBAZ64 ) || ( pixel_ID == ID_RGBAZ88 ) || ( pixel_ID == ID_RGBAZ96 )) {
-			Do_234Composition_BYTE ( my_rank, nnodes, \
-						  	   		 width, height, pixel_ID, \
-						  	     	 (BYTE *)my_image, MPI_COMM_COMPOSITION );
+			Do_234Composition_Core_BYTE ( my_rank, nnodes, \
+						  	   		 	width, height, pixel_ID, merge_ID, \
+						  	     	 	(BYTE *)my_image, MPI_COMM_COMPOSITION );
+
+		// Copy the gathered image to my_image_byte
+			if ( my_rank == ROOT_NODE ) {
+				memcpy ( my_image, temp_image_byte_ptr, width * height * RGBA * global_image_type );
+			}
+
 	}
 	else if (( pixel_ID == ID_RGBA128  ) || ( pixel_ID == ID_RGBAZ160 )) {
-			Do_234Composition_FLOAT ( my_rank, nnodes, \
-						  	   		  width, height, pixel_ID, \
-						  	     	  (float *)my_image, MPI_COMM_COMPOSITION );
+			Do_234Composition_Core_FLOAT ( my_rank, nnodes, \
+						  	   		  	width, height, pixel_ID, merge_ID, \
+						  	     	  	(float *)my_image, MPI_COMM_COMPOSITION );
+
+			// Copy the gathered image to my_image_float
+			if ( pixel_ID == ID_RGBA128  ) {
+				if ( my_rank == ROOT_NODE ) {
+					memcpy ( my_image, temp_image_rgba128, width * height * RGBA * sizeof(float));
+				}
+			}
+			else if ( pixel_ID == ID_RGBAZ160 ) {
+				if ( my_rank == ROOT_NODE ) {
+					memcpy ( my_image, temp_image_rgbaz160, width * height * RGBA * sizeof(float));
+				}
+			}
 	}
+
 	return EXIT_SUCCESS;
 }
+
 
 /*========================================================*/
 /**
@@ -115,8 +135,8 @@ void*  Do_234Composition_Ptr ( unsigned int my_rank, unsigned int nnodes, \
 	if (( pixel_ID == ID_RGBA32  ) || ( pixel_ID == ID_RGBA56  ) || ( pixel_ID == ID_RGBA64  ) || \
 	    ( pixel_ID == ID_RGBAZ64 ) || ( pixel_ID == ID_RGBAZ88 ) || ( pixel_ID == ID_RGBAZ96 )) {
 
-			Do_234Composition_BYTE ( my_rank, nnodes, \
-						  	   		 width, height, pixel_ID, \
+			Do_234Composition_Core_BYTE ( my_rank, nnodes, \
+						  	   		 width, height, pixel_ID, merge_ID, \
 						  	     	 (BYTE *)my_image, MPI_COMM_COMPOSITION );
 
 			switch ( pixel_ID ) {
@@ -130,8 +150,8 @@ void*  Do_234Composition_Ptr ( unsigned int my_rank, unsigned int nnodes, \
 	}
 	else if (( pixel_ID == ID_RGBA128  ) || ( pixel_ID == ID_RGBAZ160 )) {
 
-			Do_234Composition_FLOAT ( my_rank, nnodes, \
-						  	   		  width, height, pixel_ID, \
+			Do_234Composition_Core_FLOAT ( my_rank, nnodes, \
+						  	   		  width, height, pixel_ID, merge_ID, \
 						  	     	  (float *)my_image, MPI_COMM_COMPOSITION );
 
 			switch ( pixel_ID ) {
@@ -554,8 +574,8 @@ int Destroy_234Composition_BYTE ( unsigned int pixel_ID )
  *  @param  MPI_COMM_234BS [in]  MPI Communicator for 234 + Binary-Swap
  */
 /*========================================================*/
-int  Do_234Composition_BYTE ( unsigned int my_rank, unsigned int nnodes, \
-						  	   unsigned int width, unsigned int height, unsigned int pixel_ID, \
+int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
+						  	   unsigned int width, unsigned int height, unsigned int pixel_ID, unsigned int merge_ID, \
 						  	   BYTE *my_image_byte, MPI_Comm MPI_COMM_COMPOSITION )
 {
 
@@ -632,11 +652,6 @@ int  Do_234Composition_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 							 temp_image_byte_ptr, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_BITREV );
 				// =============== (END) MPI_Gather ===============
 
-				// Copy the gathered image to my_image_float
-				if ( my_rank == ROOT_NODE ) {
-					memcpy ( my_image_byte, temp_image_byte_ptr, width * height * RGBA * sizeof(BYTE));
-				}
-	
 			#endif // ifndef _GATHERV
 		}
 		else if (( pixel_ID == ID_RGBAZ64 ) || ( pixel_ID == ID_RGBAZ88 ) || ( pixel_ID == ID_RGBAZ96 ))
@@ -703,11 +718,6 @@ int  Do_234Composition_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 				MPI_Gather ( my_image_byte, bs_counts, MPI_BYTE, \
 							 temp_image_byte_ptr, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_BITREV );
 				// =============== (END) MPI_Gather ===============
-
-				// Copy the gathered image to my_image_float
-				if ( my_rank == ROOT_NODE ) {
-					memcpy ( my_image_byte, temp_image_byte_ptr, width * height * RGBA2 * sizeof(BYTE)); // RGBA2: 2 x RGBA
-				}
 
 			#endif // #ifdef _NOGATHER
 
@@ -1277,8 +1287,8 @@ int Destroy_234Composition_FLOAT ( unsigned int pixel_ID )
  *  @param  MPI_COMM_234BS [in]  MPI Communicator for 234 + Binary-Swap
  */
 /*========================================================*/
-int  Do_234Composition_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
-					  		    unsigned int width, unsigned int height, unsigned int pixel_ID, \
+int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
+					  		    unsigned int width, unsigned int height, unsigned int pixel_ID, unsigned int merge_ID, \
 						  		float *my_image_float, MPI_Comm MPI_COMM_234BS )
 {
 
@@ -1342,11 +1352,6 @@ int  Do_234Composition_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 			MPI_Gather ( my_image_float, bs_counts, MPI_FLOAT, \
 						 temp_image_rgba128, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_BITREV );
 
-			// Copy the gathered image to my_image_float
-			if ( my_rank == ROOT_NODE ) {
-				memcpy ( my_image_float, temp_image_rgba128, width * height * RGBA * sizeof(float));
-			}
-	
 			// =============== (END) MPI_Gather ===============
 			
 			#endif // ifndef _GATHERV
@@ -1400,10 +1405,6 @@ int  Do_234Composition_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 			MPI_Gather ( my_image_float, bs_counts, MPI_FLOAT, \
 						 temp_image_rgbaz160, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_BITREV );
 
-			// Copy the gathered image to my_image_float
-			if ( my_rank == ROOT_NODE ) {
-				memcpy ( my_image_float, temp_image_rgbaz160, width * height * RGBAZ * sizeof(float));
-			}
 			// =============== (END) MPI_Gather ===============
 
 			#endif // ifndef _GATHERV
@@ -1493,11 +1494,6 @@ int  Do_234Composition_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 				// since its size is larger than  my_image_float
 				MPI_Gather ( my_image_float, bs_counts, MPI_FLOAT, \
 							 temp_image_rgba128, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
-
-				// Copy the gathered image to my_image_float
-				if ( my_rank == ROOT_NODE ) {
-					memcpy ( my_image_float, temp_image_rgba128, width * height * RGBA * sizeof(float));
-				}
 
 				// =============== (END) MPI_Gather ===============
 
