@@ -14,8 +14,6 @@
 //          MPI_Gather using MPI Rank in bit-reversed order
 // @author Jorji Nonaka (jorji@riken.jp)
 
-
-
 #ifndef COMPOSITOR234_H_INCLUDE
 #define COMPOSITOR234_H_INCLUDE
 #endif
@@ -291,6 +289,7 @@ int Init_234Composition_BYTE  ( unsigned int, unsigned int, unsigned int, unsign
 
 int  Do_234Composition_Core_BYTE  ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, BYTE*,  MPI_Comm );
 								// my_rank, nnodes, width, height, pixel_ID, *my_image_byte,  MPI_COMM 	
+
 int Destroy_234Composition_BYTE ( unsigned int );
 								// pixel_ID )
 
@@ -300,6 +299,7 @@ int Init_234Composition_FLOAT ( unsigned int, unsigned int, unsigned int, unsign
 // Do image composition
 int  Do_234Composition_Core_FLOAT ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, float*, MPI_Comm );
 								// my_rank, nnodes, width, height, pixel_ID, *my_image_float,  MPI_COMM 	
+
 int Destroy_234Composition_FLOAT ( unsigned int );
 //=====================================
 

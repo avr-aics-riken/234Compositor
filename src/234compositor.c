@@ -84,11 +84,10 @@ int  Do_234Composition ( unsigned int my_rank, unsigned int nnodes, \
 						  	   		 	width, height, pixel_ID, merge_ID, \
 						  	     	 	(BYTE *)my_image, MPI_COMM_COMPOSITION );
 
-		// Copy the gathered image to my_image_byte
+			// Copy the gathered image to my_image_byte
 			if ( my_rank == ROOT_NODE ) {
-				memcpy ( my_image, temp_image_byte_ptr, width * height * RGBA * global_image_type );
+				memcpy ( my_image, temp_image_byte_ptr, width * height * global_image_type * sizeof(BYTE) );
 			}
-
 	}
 	else if (( pixel_ID == ID_RGBA128  ) || ( pixel_ID == ID_RGBAZ160 )) {
 			Do_234Composition_Core_FLOAT ( my_rank, nnodes, \
@@ -96,21 +95,18 @@ int  Do_234Composition ( unsigned int my_rank, unsigned int nnodes, \
 						  	     	  	(float *)my_image, MPI_COMM_COMPOSITION );
 
 			// Copy the gathered image to my_image_float
-			if ( pixel_ID == ID_RGBA128  ) {
-				if ( my_rank == ROOT_NODE ) {
+			if ( my_rank == ROOT_NODE ) {
+				if ( pixel_ID == ID_RGBA128  ) {
 					memcpy ( my_image, temp_image_rgba128, width * height * RGBA * sizeof(float));
 				}
-			}
-			else if ( pixel_ID == ID_RGBAZ160 ) {
-				if ( my_rank == ROOT_NODE ) {
-					memcpy ( my_image, temp_image_rgbaz160, width * height * RGBA * sizeof(float));
+				else if ( pixel_ID == ID_RGBAZ160 ) {
+					memcpy ( my_image, temp_image_rgbaz160, width * height * RGBAZ * sizeof(float));
 				}
 			}
 	}
 
 	return EXIT_SUCCESS;
 }
-
 
 /*========================================================*/
 /**
@@ -154,10 +150,10 @@ void*  Do_234Composition_Ptr ( unsigned int my_rank, unsigned int nnodes, \
 						  	   		  width, height, pixel_ID, merge_ID, \
 						  	     	  (float *)my_image, MPI_COMM_COMPOSITION );
 
-			switch ( pixel_ID ) {
-				case ID_RGBA128 : return (float *)temp_image_rgba128;
-				case ID_RGBAZ160: return (float *)temp_image_rgbaz160;
-			}
+				switch ( pixel_ID ) {
+					case ID_RGBA128 : return (float *)temp_image_rgba128;
+					case ID_RGBAZ160: return (float *)temp_image_rgbaz160;
+				}
 	}
 	return EXIT_SUCCESS;
 }
@@ -576,13 +572,15 @@ int Destroy_234Composition_BYTE ( unsigned int pixel_ID )
 /*========================================================*/
 int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 						  	   unsigned int width, unsigned int height, unsigned int pixel_ID, unsigned int merge_ID, \
-						  	   BYTE *my_image_byte, MPI_Comm MPI_COMM_COMPOSITION )
+						  	   BYTE *my_image_byte, MPI_Comm MPI_COMM_234BS )
 {
 
 #ifdef _GATHERV
 	unsigned int counts_offset[2]; // Pixel Counts and Offset
 	unsigned int counter;          // Loop counter	
 #endif
+
+	BYTE* comp_image_byte;
 
 	if ( is_power_of_two == true )
 	{
@@ -606,8 +604,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 			}	
 			//=========================================	
 
-			bswap_rgba_BYTE ( my_rank, nnodes, width, height, global_image_type, \
-							  my_image_byte, temp_image_byte_ptr, &bs_offset, &bs_counts, MPI_COMM_COMPOSITION );
+			bswap_rgba_BYTE ( my_rank, nnodes, width, height, pixel_ID, \
+							  my_image_byte, &comp_image_byte, &bs_offset, &bs_counts, MPI_COMM_234BS );
 
 			// ============ Final Image Gathering ==============
 			#ifdef _NOGATHER
@@ -619,16 +617,16 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 				bs_offset *= global_image_type; // 4, 7 or 8 BYTES
 
 				#ifdef _GATHER_TWICE
-					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
-					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
+					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
-					MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+								   temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_234BS );
 				#else
 					counts_offset[0] = bs_counts;
 					counts_offset[1] = bs_offset;
 
-					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
 					bs_gatherv_counts_offset_ptr = (int *)bs_gatherv_counts_offset;
 					bs_gatherv_counts_ptr = (int *)bs_gatherv_counts;
@@ -639,8 +637,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 						*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 					}
 
-					MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+								   temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_234BS );
 				#endif
 			// ============== (END) MPI_Gatherv =============== 
 
@@ -648,7 +646,10 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 
 				// ============ (BEGIN) MPI_Gather ================ 
 				bs_counts *= global_image_type; // 4, 7 or 8 BYTES
-				MPI_Gather ( my_image_byte, bs_counts, MPI_BYTE, \
+
+				// Gather the composited partial images to TEMP_IMAGE
+				// since its size is larger than initial IMAGE_BUFFER
+				MPI_Gather ( comp_image_byte, bs_counts, MPI_BYTE, \
 							 temp_image_byte_ptr, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_BITREV );
 				// =============== (END) MPI_Gather ===============
 
@@ -672,8 +673,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 			}	
 			//=========================================	
 
-			bswap_rgbaz_BYTE ( my_rank, nnodes, width, height, global_image_type, \
-						       my_image_byte, temp_image_byte_ptr, &bs_offset, &bs_counts, MPI_COMM_COMPOSITION );
+			bswap_rgbaz_BYTE ( my_rank, nnodes, width, height, pixel_ID, \
+						       my_image_byte, &comp_image_byte, &bs_offset, &bs_counts, MPI_COMM_234BS );
 
 			// ============ Final Image Gathering ==============
 			#ifdef _NOGATHER
@@ -686,16 +687,16 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 				bs_offset *= global_image_type; // 8, 11 or 12 BYTES
 
 				#ifdef _GATHER_TWICE
-					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
-					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
+					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
-					MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+								   temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_234BS );
 				#else
 					counts_offset[0] = bs_counts;
 					counts_offset[1] = bs_offset;
 
-					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
 					bs_gatherv_counts_offset_ptr = (int *)bs_gatherv_counts_offset;
 					bs_gatherv_counts_ptr = (int *)bs_gatherv_counts;
@@ -706,8 +707,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 						*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 					}
 
-					MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+								   temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_234BS );
 				#endif
 				// ============== (END) MPI_Gatherv =============== 
 
@@ -715,7 +716,10 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 
 				// ============ (BEGIN) MPI_Gather ================ 
 				bs_counts *= global_image_type; // 8, 11 or 12 BYTES
-				MPI_Gather ( my_image_byte, bs_counts, MPI_BYTE, \
+
+				// Gather the composited partial images to TEMP_IMAGE
+				// since its size is larger than initial IMAGE_BUFFER
+				MPI_Gather ( comp_image_byte, bs_counts, MPI_BYTE, \
 							 temp_image_byte_ptr, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_BITREV );
 				// =============== (END) MPI_Gather ===============
 
@@ -778,8 +782,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 			if (( stage2_bswap_my_rank >= 0 ) && ( stage2_bswap_my_rank < stage2_bswap_nnodes)) 
 			{ 		
 
-				stage2_bswap_rgba_BYTE ( stage2_bswap_my_rank, stage2_bswap_nnodes, width, height, global_image_type, \
-									     my_image_byte, temp_image_byte_ptr, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
+				stage2_bswap_rgba_BYTE ( stage2_bswap_my_rank, stage2_bswap_nnodes, width, height, pixel_ID, \
+									     my_image_byte, &comp_image_byte, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
 
 				// ============ Final Image Gathering ==============
 				#ifdef _NOGATHER
@@ -795,8 +799,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 						MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 						MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 
-						MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-									  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
+						MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+									  temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#else
 						counts_offset[0] = bs_counts;
 						counts_offset[1] = bs_offset;
@@ -812,8 +816,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 							*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 						}
 
-						MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-									  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
+						MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+									  temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#endif
 				// ============== (END) MPI_Gatherv =============== 
 	
@@ -821,8 +825,11 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 
 					// ============ (BEGIN) MPI_Gather ================ 
 					bs_counts *= global_image_type; // 8, 11 or 12 BYTES
-					MPI_Gather ( temp_image_byte_ptr, bs_counts, MPI_BYTE, \
-								 my_image_byte, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
+
+					// Gather the composited partial images to TEMP_IMAGE
+					// since its size is larger than initial IMAGE_BUFFER
+					MPI_Gather ( comp_image_byte, bs_counts, MPI_BYTE, \
+								 temp_image_byte_ptr, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
 					// =============== (END) MPI_Gather ===============
 
 				#endif // #ifdef _NOGATHER
@@ -871,8 +878,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 			if (( stage2_bswap_my_rank >= 0 ) && ( stage2_bswap_my_rank < stage2_bswap_nnodes)) 
 			{ 		
 
-				stage2_bswap_rgbaz_BYTE ( stage2_bswap_my_rank, stage2_bswap_nnodes, width, height, global_image_type, \
-									 my_image_byte, temp_image_byte_ptr, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
+				stage2_bswap_rgbaz_BYTE ( stage2_bswap_my_rank, stage2_bswap_nnodes, width, height, pixel_ID, \
+									 my_image_byte, &comp_image_byte, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
 
 				// ============ Final Image Gathering ==============
 				#ifdef _NOGATHER
@@ -886,8 +893,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 						MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 						MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 
-						MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-									  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
+						MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+									  temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#else
 						counts_offset[0] = bs_counts;
 						counts_offset[1] = bs_offset;
@@ -903,8 +910,8 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 							*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 						}
 
-						MPI_Gatherv ( temp_image_byte_ptr, bs_counts, MPI_BYTE, my_image_byte, \
-									  bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
+						MPI_Gatherv ( comp_image_byte, bs_counts, MPI_BYTE, \
+									  temp_image_byte_ptr, bs_gatherv_counts, bs_gatherv_offset, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#endif
 				// ============== (END) MPI_Gatherv =============== 
 	
@@ -912,8 +919,11 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 
 					// ============ (BEGIN) MPI_Gather ================ 
 					bs_counts *= global_image_type; // 8, 11 or 12 BYTES
-					MPI_Gather ( temp_image_byte_ptr, bs_counts, MPI_BYTE, \
-								 my_image_byte, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
+
+					// Gather the composited partial images to TEMP_IMAGE
+					// since its size is larger than initial IMAGE_BUFFER
+					MPI_Gather ( comp_image_byte, bs_counts, MPI_BYTE, \
+								 temp_image_byte_ptr, bs_counts, MPI_BYTE, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
 					// =============== (END) MPI_Gather ===============
 
 				#endif // #ifdef _NOGATHER
@@ -930,34 +940,22 @@ int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 		// ====================================================================
 		//				  		3-node Composition
 		// ====================================================================
-		if ( pixel_ID == ID_RGBA32 ) 
-		{
-			dsend3_rgba_BYTE ( my_rank, nnodes, width, height, RGBA32, my_image_byte, temp_image_rgba32, MPI_COMM_WORLD );
-		}
-		else if ( pixel_ID == ID_RGBA56 ) 
-		{
-			dsend3_rgba_BYTE ( my_rank, nnodes, width, height, RGBA56, my_image_byte, temp_image_rgba56, MPI_COMM_WORLD );
-		}
-		else if ( pixel_ID == ID_RGBA64 ) 
-		{
-			dsend3_rgba_BYTE ( my_rank, nnodes, width, height, RGBA64, my_image_byte, temp_image_rgba64, MPI_COMM_WORLD );
-		}
-		else if ( pixel_ID == ID_RGBAZ64 ) 
-		{
-			dsend3_rgbaz_BYTE ( my_rank, nnodes, width, height, RGBAZ64, my_image_byte, temp_image_rgbaz64, MPI_COMM_WORLD );
-		}
-		else if ( pixel_ID == ID_RGBAZ88 ) 
-		{
-			dsend3_rgbaz_BYTE ( my_rank, nnodes, width, height, RGBAZ88, my_image_byte, temp_image_rgbaz88, MPI_COMM_WORLD );
-		}
-		else if ( pixel_ID == ID_RGBAZ96 ) 
-		{
-			dsend3_rgbaz_BYTE ( my_rank, nnodes, width, height, RGBAZ96, my_image_byte, temp_image_rgbaz96, MPI_COMM_WORLD );
-		}
-		else
-		{
-			printf ("MPI Rank [%d of %d]: Undefined Pixel ID !!! \n", my_rank, nnodes );
-			MPI_Finalize();
+		switch ( pixel_ID ) {
+			case ID_RGBA32 : dsend3_rgba_BYTE ( my_rank, nnodes, width, height, RGBA32, my_image_byte, temp_image_rgba32, MPI_COMM_234BS );
+							   break;
+			case ID_RGBA56 : dsend3_rgba_BYTE ( my_rank, nnodes, width, height, RGBA56, my_image_byte, temp_image_rgba56, MPI_COMM_234BS );
+							   break;
+			case ID_RGBA64 : dsend3_rgba_BYTE ( my_rank, nnodes, width, height, RGBA64, my_image_byte, temp_image_rgba64, MPI_COMM_234BS );
+							   break;
+			case ID_RGBAZ64: dsend3_rgbaz_BYTE ( my_rank, nnodes, width, height, RGBAZ64, my_image_byte, temp_image_rgbaz64, MPI_COMM_234BS );
+							   break;
+			case ID_RGBAZ88: dsend3_rgbaz_BYTE ( my_rank, nnodes, width, height, RGBAZ88, my_image_byte, temp_image_rgbaz88, MPI_COMM_234BS );
+							   break;
+			case ID_RGBAZ96: dsend3_rgbaz_BYTE ( my_rank, nnodes, width, height, RGBAZ96, my_image_byte, temp_image_rgbaz96, MPI_COMM_234BS );
+							   break;
+			default: printf ("MPI Rank [%d of %d]: Undefined Pixel ID !!! \n", my_rank, nnodes );
+					  MPI_Finalize();
+					  break;
 		}
 	}
 	else if ( nnodes == 1 )
@@ -1271,8 +1269,6 @@ int Destroy_234Composition_FLOAT ( unsigned int pixel_ID )
 	return EXIT_SUCCESS;
 }
 
-
-
 /*========================================================*/
 /**
  *  @brief Do 234 Composition 
@@ -1297,6 +1293,8 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 	unsigned int counter; // Loop counter
 #endif
 
+	float *comp_image_float; 
+
 	if ( is_power_of_two == true )
 	{
 		// ====================================================================
@@ -1305,7 +1303,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 		if ( pixel_ID == ID_RGBA128 ) 
 		{	
 			bswap_rgba128 ( my_rank, nnodes, width, height, global_image_type, \
-							my_image_float, temp_image_rgba128, &bs_offset, &bs_counts, MPI_COMM_234BS );
+								my_image_float, &comp_image_float, &bs_offset, &bs_counts, MPI_COMM_234BS );
 
 			// ============ Final Image Gathering ==============
 			#ifdef _NOGATHER
@@ -1318,16 +1316,16 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 			bs_offset *= RGBA; // 4 elements
 
 				#ifdef _GATHER_TWICE
-					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
-					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
+					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
-					MPI_Gatherv ( temp_image_rgba128, bs_counts, MPI_FLOAT, my_image_float, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgba128, \
+								  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_234BS );
 				#else
 					counts_offset[0] = (unsigned int)bs_counts;
 					counts_offset[1] = (unsigned int)bs_offset;
 
-					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
 					bs_gatherv_counts_offset_ptr = (int *)bs_gatherv_counts_offset;
 					bs_gatherv_counts_ptr = (int *)bs_gatherv_counts;
@@ -1338,8 +1336,8 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 						*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 					}
 
-					MPI_Gatherv ( temp_image_rgba128, bs_counts, MPI_FLOAT, my_image_float, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgba128, \
+								    bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_234BS );
 				#endif
 			// ============== (END) MPI_Gatherv =============== 
 
@@ -1349,9 +1347,8 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 
 			// Gather the composited partial images to temp_image_rgba128
 			// since its size is larger than  my_image_float
-			MPI_Gather ( my_image_float, bs_counts, MPI_FLOAT, \
-						 temp_image_rgba128, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_BITREV );
-
+			MPI_Gather ( comp_image_float, bs_counts, MPI_FLOAT, \
+							  temp_image_rgba128, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_BITREV );
 			// =============== (END) MPI_Gather ===============
 			
 			#endif // ifndef _GATHERV
@@ -1359,7 +1356,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 		else if ( pixel_ID == ID_RGBAZ160 ) 
 		{
 			bswap_rgbaz160 ( my_rank, nnodes, width, height, global_image_type, \
-							 my_image_float, temp_image_rgbaz160, &bs_offset, &bs_counts, MPI_COMM_WORLD );
+							 my_image_float, &comp_image_float, &bs_offset, &bs_counts, MPI_COMM_234BS );
 
 			// ============ Final Image Gathering ==============
 			#ifdef _NOGATHER
@@ -1371,16 +1368,16 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 			bs_offset *= RGBAZ; // 5 elements
 
 				#ifdef _GATHER_TWICE
-					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
-					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
+					MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
-					MPI_Gatherv ( temp_image_rgbaz160, bs_counts, MPI_FLOAT, my_image_float, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgbaz160, \
+								  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_234BS );
 				#else
 					counts_offset[0] = bs_counts;
 					counts_offset[1] = bs_offset;
 
-					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gather( (unsigned int *)counts_offset, 2, MPI_INT, bs_gatherv_counts_offset, 2, MPI_INT, ROOT_NODE, MPI_COMM_234BS );
 
 					bs_gatherv_counts_offset_ptr = (int *)bs_gatherv_counts_offset;
 					bs_gatherv_counts_ptr = (int *)bs_gatherv_counts;
@@ -1391,8 +1388,8 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 						*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 					}
 
-					MPI_Gatherv ( temp_image_rgbaz160, bs_counts, MPI_FLOAT, my_image_float, \
-								  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_WORLD );
+					MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgbaz160, \
+								  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_234BS );
 				#endif
 			// ============== (END) MPI_Gatherv =============== 
 
@@ -1400,9 +1397,9 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 			// ============ (BEGIN) MPI_Gather ================ 
 			bs_counts *= RGBAZ; // 5 elements
 
-			// Gather the composited partial images to temp_image_rgba128
-			// since its size is larger than  my_image_float
-			MPI_Gather ( my_image_float, bs_counts, MPI_FLOAT, \
+			// Gather the composited partial images to TEMP_IMAGE
+			// since its size is larger than initial IMAGE_BUFFER
+			MPI_Gather ( comp_image_float, bs_counts, MPI_FLOAT, \
 						 temp_image_rgbaz160, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_BITREV );
 
 			// =============== (END) MPI_Gather ===============
@@ -1448,7 +1445,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 			if (( stage2_bswap_my_rank >= 0 ) && ( stage2_bswap_my_rank < stage2_bswap_nnodes)) 
 			{ 		
 				stage2_bswap_rgba128 ( stage2_bswap_my_rank, stage2_bswap_nnodes, width, height, global_image_type, \
-									   my_image_float, temp_image_rgba128, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
+									   my_image_float, &comp_image_float, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
 
 				// ============ Final Image Gathering ==============
 				#ifdef _NOGATHER
@@ -1464,7 +1461,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 						MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 						MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 
-						MPI_Gatherv ( temp_image_rgba128, bs_counts, MPI_FLOAT, my_image_float, \
+						MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgba128, \
 									  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#else
 						counts_offset[0] = bs_counts;
@@ -1481,7 +1478,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 							*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 						}
 
-						MPI_Gatherv ( temp_image_rgba128, bs_counts, MPI_FLOAT, my_image_float, \
+						MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgba128, \
 									  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#endif
 				// ============== (END) MPI_Gatherv =============== 
@@ -1490,9 +1487,9 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 				// ============ (BEGIN) MPI_Gather ================ 
 				bs_counts *= RGBA; // 4 elements
 
-				// Gather the composited partial images to temp_image_rgba128
-				// since its size is larger than  my_image_float
-				MPI_Gather ( my_image_float, bs_counts, MPI_FLOAT, \
+				// Gather the composited partial images to TEMP_IMAGE
+				// since its size is larger than initial IMAGE_BUFFER
+				MPI_Gather ( comp_image_float, bs_counts, MPI_FLOAT, \
 							 temp_image_rgba128, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
 
 				// =============== (END) MPI_Gather ===============
@@ -1529,7 +1526,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 			{ 		
 
 				stage2_bswap_rgbaz160 ( stage2_bswap_my_rank, stage2_bswap_nnodes, width, height, global_image_type, \
-									    my_image_float, temp_image_rgbaz160, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
+									    my_image_float, &comp_image_float, &bs_offset, &bs_counts, MPI_COMM_STAGE2_BSWAP );
 
 				// ============ Final Image Gathering ==============
 				#ifdef _NOGATHER
@@ -1545,7 +1542,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 						MPI_Gather ( (void *)&bs_offset, 1, MPI_INT, bs_gatherv_offset, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 						MPI_Gather ( (void *)&bs_counts, 1, MPI_INT, bs_gatherv_counts, 1, MPI_INT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 
-						MPI_Gatherv ( temp_image_rgbaz160, bs_counts, MPI_FLOAT, my_image_float, \
+						MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgbaz160, \
 									  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#else
 						counts_offset[0] = bs_counts;
@@ -1562,7 +1559,7 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 							*bs_gatherv_offset_ptr++ = (int)*bs_gatherv_counts_offset_ptr++;
 						}
 
-						MPI_Gatherv ( temp_image_rgbaz160, bs_counts, MPI_FLOAT, my_image_float, \
+						MPI_Gatherv ( comp_image_float, bs_counts, MPI_FLOAT, temp_image_rgbaz160, \
 									  bs_gatherv_counts, bs_gatherv_offset, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BSWAP );
 					#endif
 				// ============== (END) MPI_Gatherv =============== 
@@ -1570,9 +1567,11 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 				#else
 				// ============ (BEGIN) MPI_Gather ================ 
 				bs_counts *= RGBAZ; // 5 elements
-	
-				MPI_Gather ( temp_image_rgbaz160, bs_counts, MPI_FLOAT, \
-							 my_image_float, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
+
+				// Gather the composited partial images to TEMP_IMAGE
+				// since its size is larger than initial IMAGE_BUFFER
+				MPI_Gather ( comp_image_float, bs_counts, MPI_FLOAT, \
+							 temp_image_rgbaz160, bs_counts, MPI_FLOAT, ROOT_NODE, MPI_COMM_STAGE2_BITREV );
 				// =============== (END) MPI_Gather ===============
 				#endif
 			}					
@@ -1608,6 +1607,4 @@ int  Do_234Composition_Core_FLOAT ( unsigned int my_rank, unsigned int nnodes, \
 
 	return EXIT_SUCCESS;
 }
-
-
 
