@@ -18,4 +18,6 @@ before_script:
   - export CXX=mpicxx
 
 script:
-  - ( ./configure && make )
+  - autoreconf --force install
+  - ./configure
+  - make
