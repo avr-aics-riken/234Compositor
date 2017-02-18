@@ -10,6 +10,7 @@ compiler:
 sudo: required
 
 before_script:
+  - chmod +x ./travis_setup.sh
   - ./travis_setup.sh
   - export CC=mpicc
   - export CXX=mpicxx
