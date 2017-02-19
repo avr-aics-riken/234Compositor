@@ -15,8 +15,8 @@ CFLAGS	 = -O3 -std=gnu99 -Wall
 # MPI_GATHERV Version
 #CFLAGS	 = -O3 -std=gnu99 -Wall -D _GATHERV
 
-# OpenMP
-OMPFLAGS = -fopenmp
+# OpenMP (Activate this for enabling thread parallelization through OpenMP)
+# OMPFLAGS = -fopenmp
 
 LIBS = -lm
 
