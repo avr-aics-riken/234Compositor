@@ -46,7 +46,7 @@ $(LIBFILE): $(OBJS_LIB)
 	@echo "lib234comp.a created successfully."
 
 %.o: $(SOURCE_DIR)/%.c
-	$(CC) $(CFLAGS) $(OMPFLAGS) -I$(INCLUDE_DIR) -c $<
+	$(CC) $(CFLAGS) $(OMPFLAGS) -I$(INCLUDE_DIR) $(LIBS) -c $<
 
 all: $(LIBFILE)
 	$(RM) *.o
