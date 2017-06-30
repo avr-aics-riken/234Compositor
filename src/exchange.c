@@ -23,6 +23,11 @@
 	#define COMPOSITOR234_MERGE_H_INCLUDE
 #endif
 
+#ifndef COMPOSITOR234_COMPRESS_H_INCLUDE
+	#include "compress.h"
+	#define COMPOSITOR234_COMPRESS_H_INCLUDE
+#endif
+
 #include "exchange.h"
 
 /*========================================================*/
@@ -1121,6 +1126,291 @@ int dsend3_rgbaz160 ( unsigned int my_rank, unsigned int nnodes, \
  *  @param  MPI_COMM_BSWAP [in] MPI Communicator
 */
 /*========================================================*/
+int bswap_rgba_BYTE_RLE ( unsigned int my_rank, unsigned int nnodes, \
+					unsigned int width, unsigned int height, unsigned int roi_image[4], \
+					unsigned int merge_ID, unsigned int image_ID, 
+					BYTE *my_image, BYTE **comp_image, \
+					unsigned int *bs_offset, unsigned int *bs_counts, \
+					MPI_Comm MPI_COMM_BSWAP )
+{
+	MPI_Status  status;
+	MPI_Request isend;
+	MPI_Request irecv;
+
+	unsigned int image_size;
+	unsigned int bs_send_image_size;
+	unsigned int bs_recv_image_size;
+
+	unsigned int rle_send_image_size;
+	unsigned int rle_recv_image_size;
+
+	BYTE* bs_send_image_ptr;
+	BYTE* bs_pair_image_ptr;
+	BYTE* bs_recv_image_ptr;
+	BYTE* bs_blnd_image_ptr;
+
+	BYTE* rle_send_image_ptr;
+	BYTE* rle_recv_image_ptr;
+
+	unsigned int bs_pair_offset;
+	unsigned int bs_stage, bs_max_stage;
+	unsigned int bs_pair_node; 
+
+	// ====================================================================
+	// 	 	COMPOSITE IMAGES ( BINARY SWAP )
+	// ====================================================================
+	 // Power of two number of pixels
+	#ifdef _GATHERV	
+		// << MPI_GATHERV >>
+		image_size = width * height;
+	#else 
+		// << MPI_GATHER >>
+		// Add remaining pixels (Blank Pixels) in order to make
+		// image size (number of pixels) divisible by "nnodes"
+		image_size = width * height + global_add_pixels; 
+	#endif
+
+	#ifdef C99
+		bs_max_stage = (unsigned int)( log2( (double) nnodes ));
+	#else
+		bs_max_stage = (unsigned int)( (float)log( nnodes ) * M_LOG2E );
+	#endif
+	
+	switch ( image_ID ) {
+		case ID_RGBA32: temp_image_byte_ptr = temp_image_rgba32;
+                    break;
+		case ID_RGBA56: temp_image_byte_ptr = temp_image_rgba56;
+                    break;
+		case ID_RGBA64: temp_image_byte_ptr = temp_image_rgba64;
+                    break;
+		case ID_RGBAZ64: temp_image_byte_ptr = temp_image_rgbaz64;
+                     break;
+		case ID_RGBAZ88: temp_image_byte_ptr = temp_image_rgbaz88;
+                     break;
+		case ID_RGBAZ96: temp_image_byte_ptr = temp_image_rgbaz96;
+                     break;
+ 	}
+
+	bs_blnd_image_ptr  = my_image;
+	bs_send_image_size = image_size; // width * height ( + global_add_pixels )
+
+	*bs_offset = (unsigned int)0;
+	*bs_counts = (unsigned int)0;
+
+	bs_recv_image_size = 0;
+
+	for ( bs_stage = 0; bs_stage < bs_max_stage; bs_stage++ )
+	{
+		bs_pair_offset = (int) pow( (double)2, (double)bs_stage ); 
+
+		if ((( my_rank / bs_pair_offset ) % 2 ) == 0 ) // LEFT NODE
+		{
+			//=====================================
+			//  	LEFT NODE of pair
+			//=====================================
+			bs_pair_node = my_rank + bs_pair_offset;
+
+			#ifdef _GATHERV	
+				// << MPI_GATHERV >>
+				if (( bs_send_image_size % 2 ) == 0 ) // EVEN number of pixels
+				{
+					bs_recv_image_size = ( unsigned int )floor( bs_send_image_size * 0.5 );
+					bs_send_image_size = bs_recv_image_size;
+				}
+				else // ODD number of pixels
+				{
+					bs_recv_image_size = ( unsigned int )floor( bs_send_image_size * 0.5 );
+					bs_send_image_size = bs_recv_image_size + 1;
+				}s
+			#else
+				// << MPI_GATHER >>
+				// Always EVEN number of pixels
+				bs_recv_image_size = bs_send_image_size * 0.5;
+				bs_send_image_size = bs_recv_image_size;
+				// In the first stage there is a need to send correct 
+				// amount of remaining pixels
+				if ( bs_stage == 0 ) {
+					bs_send_image_size -= global_add_pixels;
+				}
+			#endif
+
+			bs_pair_image_ptr  = bs_blnd_image_ptr;
+			bs_recv_image_ptr  = temp_image_byte_ptr;
+			bs_send_image_ptr  = bs_pair_image_ptr ;
+			bs_send_image_ptr += ( bs_recv_image_size * global_image_type );
+
+			rle_send_image_ptr  = bs_recv_image_ptr;
+			rle_recv_image_ptr  = rle_send_image_ptr;
+			rle_recv_image_ptr += ( bs_recv_image_size * global_image_type );
+			//=====================================
+			//  Image Exchange between pairs
+			//=====================================
+			rle_send_image_size = RLE_Compress( bs_send_image_ptr, rle_send_image_ptr, bs_send_image_size * global_image_type );
+
+			MPI_Isend( &rle_send_image_size, 1, MPI_UNSIGNED, bs_pair_node, SEND_TAG, MPI_COMM_BSWAP, &isend );
+			MPI_Irecv( &rle_recv_image_size, 1, MPI_UNSIGNED, bs_pair_node, RECV_TAG, MPI_COMM_BSWAP, &irecv );
+
+			MPI_Wait( &irecv, &status );
+			MPI_Wait( &isend, &status );
+
+			MPI_Isend( rle_send_image_ptr, rle_send_image_size * global_image_type, MPI_BYTE, \
+					bs_pair_node, SEND_TAG, MPI_COMM_BSWAP, &isend );
+			MPI_Irecv( rle_recv_image_ptr, rle_recv_image_size * global_image_type, MPI_BYTE, \
+					bs_pair_node, RECV_TAG, MPI_COMM_BSWAP, &irecv );
+
+			MPI_Wait( &isend, &status );
+			MPI_Wait( &irecv, &status );
+
+			RLE_Uncompress( rle_recv_image_ptr, bs_recv_image_ptr, rle_recv_image_size );
+
+			#ifdef _NOBLEND
+			#else
+			//=====================================
+			//  Image Compositing (Alpha or Depth)
+			//=====================================
+			// Assuming bs_pair_image_ptr (OVER) and bs_recv_image_ptr (UNDER)
+			if ( image_ID == ID_RGBA32 ) 
+			{
+				composite_alpha_rgba32 ( bs_pair_image_ptr, bs_recv_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
+			}
+			else if ( image_ID == ID_RGBA56 ) 
+			{
+				composite_alpha_rgba56 ( bs_pair_image_ptr, bs_recv_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
+			}
+			else if ( image_ID == ID_RGBA64 ) 
+			{
+				composite_alpha_rgba64 ( bs_pair_image_ptr, bs_recv_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
+			}
+			#endif
+
+			bs_blnd_image_ptr  = bs_pair_image_ptr;
+			bs_send_image_size = bs_recv_image_size;
+		}
+		else // RIGHT NODE
+		{		
+			//=====================================
+			//  		RIGHT NODE of pair
+			//=====================================
+			bs_pair_node = my_rank - bs_pair_offset;
+
+			#ifdef _GATHERV	
+				// << MPI_GATHERV >>
+				if (( bs_send_image_size % 2 ) == 0 ) // EVEN number of pixels
+				{
+					bs_send_image_size *= 0.5;
+					bs_recv_image_size  = bs_send_image_size;
+				}
+				else // ODD number of pixels
+				{
+					bs_send_image_size = ( unsigned int )floor( bs_send_image_size * 0.5 );
+					bs_recv_image_size = bs_send_image_size + 1;
+				}
+			#else
+				// << MPI_GATHER >>
+				// Always EVEN number of pixels
+				bs_recv_image_size = bs_send_image_size * 0.5;
+				bs_send_image_size = bs_recv_image_size;
+
+				//=====================================
+				//  Offset for Image Gathering
+				//=====================================
+				// In the first stage there is a need to send correct 
+				// amount of remaining pixels
+				if ( bs_stage == 0 ) {
+					bs_recv_image_size -= global_add_pixels;
+				}
+			#endif
+
+			//=====================================
+			//  Offset for Image Gathering
+			//=====================================
+			*bs_offset += bs_send_image_size;
+			
+			bs_recv_image_ptr  = temp_image_byte_ptr;
+			bs_send_image_ptr  = bs_blnd_image_ptr;
+			bs_pair_image_ptr  = bs_send_image_ptr ;
+			bs_pair_image_ptr += ( bs_send_image_size * global_image_type );
+
+			if ( bs_stage == 0 ) {
+				bs_blnd_image_ptr  = temp_image_byte_ptr;
+				bs_blnd_image_ptr += ( bs_send_image_size * global_image_type );
+
+				rle_send_image_ptr  = bs_recv_image_ptr;
+				rle_recv_image_ptr  = rle_send_image_ptr;
+				rle_recv_image_ptr += ( bs_recv_image_size * global_image_type );
+			}
+			else
+			{
+				bs_blnd_image_ptr  = bs_pair_image_ptr;
+			}
+
+			//=====================================
+			//  Image Exchange between pairs
+			//=====================================
+			rle_send_image_size = RLE_Compress( bs_send_image_ptr, rle_send_image_ptr, bs_send_image_size * global_image_type );
+
+			MPI_Irecv( &rle_recv_image_size, 1, MPI_UNSIGNED, bs_pair_node, SEND_TAG, MPI_COMM_BSWAP, &irecv );
+			MPI_Isend( &rle_send_image_size, 1, MPI_UNSIGNED, bs_pair_node, RECV_TAG, MPI_COMM_BSWAP, &isend );
+
+			MPI_Wait( &irecv, &status );
+			MPI_Wait( &isend, &status );
+
+			MPI_Irecv( rle_recv_image_ptr, rle_recv_image_size * global_image_type, MPI_BYTE, \
+					bs_pair_node, SEND_TAG, MPI_COMM_BSWAP, &irecv );
+			MPI_Isend( rle_send_image_ptr, rle_send_image_size * global_image_type, MPI_BYTE, \
+					bs_pair_node, RECV_TAG, MPI_COMM_BSWAP, &isend );
+
+			MPI_Wait( &irecv, &status );
+			MPI_Wait( &isend, &status );
+
+			RLE_Uncompress( rle_recv_image_ptr, bs_recv_image_ptr, rle_recv_image_size );
+
+			#ifdef _NOBLEND
+			#else
+			//=====================================
+			//  Image Compositing (Alpha or Depth)
+			//=====================================
+			// Assuming bs_recv_image_ptr (OVER) and bs_pair_image_ptr (UNDER)
+			if ( image_ID == ID_RGBA32 ) 
+			{
+				composite_alpha_rgba32 ( bs_recv_image_ptr, bs_pair_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
+			}
+			else if ( image_ID == ID_RGBA56 ) 
+			{
+				composite_alpha_rgba56 ( bs_recv_image_ptr, bs_pair_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
+			}
+			else if ( image_ID == ID_RGBA64 ) 
+			{
+				composite_alpha_rgba64 ( bs_recv_image_ptr, bs_pair_image_ptr, bs_blnd_image_ptr, bs_recv_image_size );
+			}
+			#endif // #ifdef _NOBLEND
+		}
+	}
+
+	*bs_counts = bs_recv_image_size;
+	*comp_image = (BYTE *)bs_blnd_image_ptr;
+
+	return EXIT_SUCCESS;
+}
+
+
+/*========================================================*/
+/**
+ *  @brief Traditional Binary-Swap Image Exchange 
+ *        (RGBA32 and RGBA56 Pixels) 
+ *
+ *  @param  my_rank        [in] My Rank
+ *  @param  nnodes         [in] Number of Nodes
+ *  @param  width          [in] Image Width
+ *  @param  height         [in] Image Height
+ *  @param  image_ID       [in] Image Type ID
+ *  @param  my_image       [in] Image Data 
+ *  @param  temp_image     [in] Temporary Buffer
+ *  @param  bs_offset      [in] Offset for MPI_Gatherv
+ *  @param  bs_counts      [in] Counts for MPI_Gatherv
+ *  @param  MPI_COMM_BSWAP [in] MPI Communicator
+*/
+/*========================================================*/
 int bswap_rgba_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 				      unsigned int width, unsigned int height, unsigned int image_ID, \
 				      BYTE *my_image, BYTE **comp_image, \
@@ -1350,6 +1640,7 @@ int bswap_rgba_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 
 	return EXIT_SUCCESS;
 }
+
 
 /*========================================================*/
 /**

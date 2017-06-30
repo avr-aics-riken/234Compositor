@@ -21,6 +21,8 @@
 // ======================================
 // Binary-Swap (RGBA32 and RGBA56 Pixels)
 int bswap_rgba_BYTE  ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, BYTE*,  BYTE**,  unsigned int*, unsigned int*, MPI_Comm ); 
+// Binary-Swap with ROI (RGBAZ64 and RGBAZ88 Pixels)
+int bswap_rgba_BYTE_ROI ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int*, unsigned int, unsigned int, BYTE*,  BYTE**,  unsigned int*, unsigned int*, MPI_Comm ); 
 // Binary-Swap (RGBAZ64 and RGBAZ88 Pixels)
 int bswap_rgbaz_BYTE ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, BYTE*,  BYTE**,  unsigned int*, unsigned int*, MPI_Comm ); 
 // Binary-Swap (RGBA128 Pixels)

@@ -74,15 +74,15 @@ int Init_234Composition ( unsigned int my_rank, unsigned int nnodes, unsigned in
  */
 /*========================================================*/
 int  Do_234Composition ( unsigned int my_rank, unsigned int nnodes, \
-						 unsigned int width, unsigned int height, \
-						 unsigned int pixel_ID, unsigned int merge_ID, \
-						 void *my_image, MPI_Comm MPI_COMM_COMPOSITION )
+				 unsigned int width, unsigned int height, \
+				 unsigned int pixel_ID, unsigned int merge_ID, \
+				 void *my_image, MPI_Comm MPI_COMM_COMPOSITION )
 {
 	if (( pixel_ID == ID_RGBA32  ) || ( pixel_ID == ID_RGBA56  ) || ( pixel_ID == ID_RGBA64  ) || \
 	    ( pixel_ID == ID_RGBAZ64 ) || ( pixel_ID == ID_RGBAZ88 ) || ( pixel_ID == ID_RGBAZ96 )) {
 			Do_234Composition_Core_BYTE ( my_rank, nnodes, \
-						  	   		 	width, height, pixel_ID, merge_ID, \
-						  	     	 	(BYTE *)my_image, MPI_COMM_COMPOSITION );
+				  	   		 	width, height, pixel_ID, merge_ID, \
+					  	     	 	(BYTE *)my_image, MPI_COMM_COMPOSITION );
 
 			// Copy the gathered image to my_image_byte
 			if ( my_rank == ROOT_NODE ) {
@@ -91,8 +91,8 @@ int  Do_234Composition ( unsigned int my_rank, unsigned int nnodes, \
 	}
 	else if (( pixel_ID == ID_RGBA128  ) || ( pixel_ID == ID_RGBAZ160 )) {
 			Do_234Composition_Core_FLOAT ( my_rank, nnodes, \
-						  	   		  	width, height, pixel_ID, merge_ID, \
-						  	     	  	(float *)my_image, MPI_COMM_COMPOSITION );
+				  	   		  	width, height, pixel_ID, merge_ID, \
+					  	     	  	(float *)my_image, MPI_COMM_COMPOSITION );
 
 			// Copy the gathered image to my_image_float
 			if ( my_rank == ROOT_NODE ) {
@@ -124,15 +124,15 @@ int  Do_234Composition ( unsigned int my_rank, unsigned int nnodes, \
  */
 /*========================================================*/
 void*  Do_234Composition_Ptr ( unsigned int my_rank, unsigned int nnodes, \
-	  					       unsigned int width, unsigned int height, \
-						 	   unsigned int pixel_ID, unsigned int merge_ID, \
-						 	   void *my_image, MPI_Comm MPI_COMM_COMPOSITION )
+					unsigned int width, unsigned int height, \
+					unsigned int pixel_ID, unsigned int merge_ID, \
+					void *my_image, MPI_Comm MPI_COMM_COMPOSITION )
 {
 	if (( pixel_ID == ID_RGBA32  ) || ( pixel_ID == ID_RGBA56  ) || ( pixel_ID == ID_RGBA64  ) || \
 	    ( pixel_ID == ID_RGBAZ64 ) || ( pixel_ID == ID_RGBAZ88 ) || ( pixel_ID == ID_RGBAZ96 )) {
 
 			Do_234Composition_Core_BYTE ( my_rank, nnodes, \
-						  	   		 width, height, pixel_ID, merge_ID, \
+					  	   		 width, height, pixel_ID, merge_ID, \
 						  	     	 (BYTE *)my_image, MPI_COMM_COMPOSITION );
 
 			switch ( pixel_ID ) {
@@ -147,7 +147,7 @@ void*  Do_234Composition_Ptr ( unsigned int my_rank, unsigned int nnodes, \
 	else if (( pixel_ID == ID_RGBA128  ) || ( pixel_ID == ID_RGBAZ160 )) {
 
 			Do_234Composition_Core_FLOAT ( my_rank, nnodes, \
-						  	   		  width, height, pixel_ID, merge_ID, \
+					  	   		  width, height, pixel_ID, merge_ID, \
 						  	     	  (float *)my_image, MPI_COMM_COMPOSITION );
 
 				switch ( pixel_ID ) {
@@ -571,7 +571,8 @@ int Destroy_234Composition_BYTE ( unsigned int pixel_ID )
  */
 /*========================================================*/
 int  Do_234Composition_Core_BYTE ( unsigned int my_rank, unsigned int nnodes, \
-						  	   unsigned int width, unsigned int height, unsigned int pixel_ID, unsigned int merge_ID, \
+						  	   unsigned int width, unsigned int height, \
+							   unsigned int pixel_ID, unsigned int merge_ID, \
 						  	   BYTE *my_image_byte, MPI_Comm MPI_COMM_234BS )
 {
 

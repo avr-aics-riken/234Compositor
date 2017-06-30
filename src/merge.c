@@ -95,7 +95,6 @@
 	{
 		// Separate R, G, B and A values of both 
 		// the foreground and background colors	
-
 		over_r = (BYTE)over_image[ i     ];
 		over_g = (BYTE)over_image[ i + 1 ];
 		over_b = (BYTE)over_image[ i + 2 ];
@@ -1521,17 +1520,16 @@ void Create_AlphaBlend_LUT ( void )
 
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
-			private( i, Alpha_Div_256, \
-					 over_r,  over_g,  over_b,  over_a,   \
-				     under_r, under_g, under_b, under_a,  \
-					 blend_r, blend_g, blend_b, blend_a ) 
+		private( i, Alpha_Div_256, \
+		over_r,  over_g,  over_b,  over_a,   \
+		under_r, under_g, under_b, under_a,  \
+		blend_r, blend_g, blend_b, blend_a ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBA ) // SKIP 4 elements
 	{
 		// Separate R, G, B and A values of both 
 		// the foreground and background colors	
-
 		over_r = (BYTE)over_image[ i     ];
 		over_g = (BYTE)over_image[ i + 1 ];
 		over_b = (BYTE)over_image[ i + 2 ];
