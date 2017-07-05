@@ -39,6 +39,7 @@
  *  @param  image_size  [in] Image size
 */
 /*========================================================*/
+
 #ifdef C99
  int composite_alpha_rgba32 \
 	( BYTE* restrict over_image, \
@@ -86,57 +87,62 @@
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
 			private( i, one_minus_alpha, \
-					 over_r,  over_g,  over_b,  over_a,   \
-				     under_r, under_g, under_b, under_a,  \
-					 blend_r, blend_g, blend_b, blend_a ) 
+				 over_r,  over_g,  over_b,  over_a,   \
+				 under_r, under_g, under_b, under_a,  \
+				 blend_r, blend_g, blend_b, blend_a ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBA ) // SKIP 4 elements
 	{
-		// Separate R, G, B and A values of both 
-		// the foreground and background colors	
-		over_r = (BYTE)over_image[ i     ];
-		over_g = (BYTE)over_image[ i + 1 ];
-		over_b = (BYTE)over_image[ i + 2 ];
 		over_a = (BYTE)over_image[ i + 3 ];
-
-		under_r = (BYTE)under_image[ i     ];
-		under_g = (BYTE)under_image[ i + 1 ];
-		under_b = (BYTE)under_image[ i + 2 ];
 		under_a = (BYTE)under_image[ i + 3 ];
 
-		// Pre-calculate 1 - Src_A
-		one_minus_alpha = (float)( 1.0f - ( over_a  / 255.0f ));
+		if ( over_a == 0 ) {
+			blend_a = under_a;
 
-		// =======================================================
-		blend_a = saturate_add( over_a, (BYTE)( under_a * one_minus_alpha ));
+			blend_r = (BYTE)under_image[ i     ];
+			blend_g = (BYTE)under_image[ i + 1 ];
+			blend_b = (BYTE)under_image[ i + 2 ];
+		}
+		else if ( over_a == 255 ) {
+			blend_a = over_a;
 
-		blend_r = saturate_add( over_r, (BYTE)( under_r * one_minus_alpha ));
-		blend_g = saturate_add( over_g, (BYTE)( under_g * one_minus_alpha ));
-		blend_b = saturate_add( over_b, (BYTE)( under_b * one_minus_alpha ));
-		// =======================================================
+			blend_r = (BYTE)over_image[ i     ];
+			blend_g = (BYTE)over_image[ i + 1 ];
+			blend_b = (BYTE)over_image[ i + 2 ];
+		}
+		else {
+		
+			// Separate R, G, B and A values of both 
+			// the foreground and background colors	
+			over_r = (BYTE)over_image[ i     ];
+			over_g = (BYTE)over_image[ i + 1 ];
+			over_b = (BYTE)over_image[ i + 2 ];
 
+			under_r = (BYTE)under_image[ i     ];
+			under_g = (BYTE)under_image[ i + 1 ];
+			under_b = (BYTE)under_image[ i + 2 ];
+	
+			// Pre-calculate 1 - Src_A
+			one_minus_alpha = (float)( 1.0f - ( over_a  / 255.0f ));
+
+			// =======================================================
+			blend_a = saturate_add( over_a, (BYTE)( under_a * one_minus_alpha ));
+
+			blend_r = saturate_add( over_r, (BYTE)( under_r * one_minus_alpha ));
+			blend_g = saturate_add( over_g, (BYTE)( under_g * one_minus_alpha ));
+			blend_b = saturate_add( over_b, (BYTE)( under_b * one_minus_alpha ));
+			// =======================================================
+		}	
+		
 		blend_image_ptr[ i     ] = (BYTE)( blend_r ); 
 		blend_image_ptr[ i + 1 ] = (BYTE)( blend_g ); 
 		blend_image_ptr[ i + 2 ] = (BYTE)( blend_b ); 
 		blend_image_ptr[ i + 3 ] = (BYTE)( blend_a ); 
+
 	}
 	return EXIT_SUCCESS;
 }
-
-/*========================================================*/
-/**
- *  @brief Alpha-blend compositing (RGBAZ64 Pixels)
- *         Back-to-Front Order
- * 
- *  Consider Pre-multiplied (Weighted) images
- *
- *  @param  over_image  [in] Image to be alpha blended
- *  @param  under_image [in] Image to be alpha blended
- *  @param  blend_image [in] Image to be alpha blended
- *  @param  image_size  [in] Image size
-*/
-/*========================================================*/
 
 #ifdef C99
  int composite_alpha_rgbaz64 \
@@ -182,8 +188,6 @@
 	BYTE  blend_a;
 	float blend_z;
 
-	float one_minus_alpha;
-
 	blend_image_ptr = (BYTE *)blend_image;
 	over_image_ptr  = (BYTE *)over_image;
 	under_image_ptr = (BYTE *)under_image;
@@ -201,10 +205,10 @@
 
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
-			private( i, one_minus_alpha, \
-					 over_r,  over_g,  over_b,  over_a, over_z_f,  \
-				     under_r, under_g, under_b, under_a, under_z_f,\
-					 blend_r, blend_g, blend_b, blend_a, blend_z ) 
+			private( i, \
+				  over_r,  over_g,  over_b,  over_a, over_z_f,  \
+				  under_r, under_g, under_b, under_a, under_z_f,\
+				  blend_r, blend_g, blend_b, blend_a, blend_z ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBAZ64 ) // SKIP 8 BYTES
@@ -227,47 +231,33 @@
 		// Depth sorting if necessary
 		if ( over_z_f > under_z_f ) 
 		{
+			blend_r = under_r;
+			blend_g = under_g;
+			blend_b = under_b;
+			blend_a = under_a;
+			blend_z = under_z_f;
+		}
+		else 
+		{
 			blend_r = over_r;
 			blend_g = over_g;
 			blend_b = over_b;
 			blend_a = over_a;
 			blend_z = over_z_f;
-
-			over_r = under_r;
-			over_g = under_g;
-			over_b = under_b;
-			over_a = under_a;
-			over_z_f = under_z_f;
-
-			under_r = blend_r;
-			under_g = blend_g;
-			under_b = blend_b;
-			under_a = blend_a;
-			under_z_f = blend_z;
 		}
 
-		// Pre-calculate 1 - Src_A
-		one_minus_alpha = (float)( 1.0f - ( over_a  / 255.0f ));
 
-		// =======================================================
-		blend_a = saturate_add( over_a, (BYTE)( under_a * one_minus_alpha ));
-
-		blend_r = saturate_add( over_r, (BYTE)( under_r * one_minus_alpha ));
-		blend_g = saturate_add( over_g, (BYTE)( under_g * one_minus_alpha ));
-		blend_b = saturate_add( over_b, (BYTE)( under_b * one_minus_alpha ));
-		// =======================================================
 
 		blend_image_ptr[ i     ] = (BYTE)( blend_r );
 		blend_image_ptr[ i + 1 ] = (BYTE)( blend_g );
 		blend_image_ptr[ i + 2 ] = (BYTE)( blend_b );
 		blend_image_ptr[ i + 3 ] = (BYTE)( blend_a );
 		blend_image_f_ptr = (float *)&blend_image_ptr[ i + 4 ];
-		blend_image_f_ptr[ 0 ] = (float)over_z_f;
+		blend_image_f_ptr[ 0 ] = (float)blend_z;
 	}
 	
 	return EXIT_SUCCESS;
 }
-
 
 /*========================================================*/
 /**
@@ -336,9 +326,9 @@ int composite_alpha_rgba32f \
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
 			private( i, one_minus_alpha, \
-					 over_r,  over_g,  over_b,  over_a,   \
-				     under_r, under_g, under_b, under_a,  \
-					 blend_r, blend_g, blend_b, blend_a ) 
+				 over_r,  over_g,  over_b,  over_a,   \
+				 under_r, under_g, under_b, under_a,  \
+				 blend_r, blend_g, blend_b, blend_a ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBA ) // SKIP 4 elements
@@ -634,9 +624,9 @@ int composite_alpha_rgba32f \
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
 			private( i, one_minus_alpha, \
-					 over_r,  over_g,  over_b,  over_a,   \
-				     under_r, under_g, under_b, under_a,  \
-					 blend_r, blend_g, blend_b, blend_a ) 
+				 over_r,  over_g,  over_b,  over_a,   \
+				 under_r, under_g, under_b, under_a,  \
+				 blend_r, blend_g, blend_b, blend_a ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBA56 ) // SKIP 7 elements
@@ -772,9 +762,9 @@ int composite_alpha_rgba32f \
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
 			private( i, one_minus_alpha, \
-					 over_r,  over_g,  over_b,  over_a,   \
-				     under_r, under_g, under_b, under_a,  \
-					 blend_r, blend_g, blend_b, blend_a ) 
+				 over_r,  over_g,  over_b,  over_a,   \
+				 under_r, under_g, under_b, under_a,  \
+				 blend_r, blend_g, blend_b, blend_a ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBA64 ) // SKIP 8 elements
@@ -927,9 +917,9 @@ int composite_alpha_rgba32f \
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
 			private( i, one_minus_alpha, \
-					 over_r_f,  over_g_f,  over_b_f,  over_a_f, over_z_f,  \
-				     under_r, under_g, under_b_f, under_a_f, under_z_f,\
-					 blend_r, blend_g, blend_b, blend_a, blend_z ) 
+				 over_r_f,  over_g_f,  over_b_f,  over_a_f, over_z_f,  \
+				 under_r, under_g, under_b_f, under_a_f, under_z_f,\
+				 blend_r, blend_g, blend_b, blend_a, blend_z ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBAZ88 ) // SKIP 11 BYTES
@@ -1223,9 +1213,9 @@ int composite_alpha_rgba32f \
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
 			private( i, one_minus_alpha, \
-					 over_r,  over_g,  over_b,  over_a,   \
-				     under_r, under_g, under_b, under_a,  \
-					 blend_r, blend_g, blend_b, blend_a ) 
+				 over_r,  over_g,  over_b,  over_a,   \
+				 under_r, under_g, under_b, under_a,  \
+				 blend_r, blend_g, blend_b, blend_a ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBA ) // SKIP 4 elements(FLOAT)
@@ -1330,9 +1320,9 @@ int composite_alpha_rgba32f \
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
 			private( i, one_minus_alpha, \
-					 over_r,  over_g,  over_b,  over_a, over_z,  \
-				     under_r, under_g, under_b, under_a, under_z,  \
-					 blend_r, blend_g, blend_b, blend_a, blend_z ) 
+				  over_r,  over_g,  over_b,  over_a, over_z,  \
+				  under_r, under_g, under_b, under_a, under_z,  \
+				  blend_r, blend_g, blend_b, blend_a, blend_z ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBAZ ) // SKIP 5 elements(FLOAT)
@@ -1433,7 +1423,6 @@ int composite_alpha_rgba32f \
  *  @brief Generate look up tables for alpha blending operation. 
  */
 /*===========================================================================*/
-#ifdef _LUTBLEND
 void Create_AlphaBlend_LUT ( void )
 {
 	unsigned int Alpha;
@@ -1520,10 +1509,10 @@ void Create_AlphaBlend_LUT ( void )
 
 	#if defined ( _OPENMP ) 
 		#pragma omp parallel for \
-		private( i, Alpha_Div_256, \
-		over_r,  over_g,  over_b,  over_a,   \
-		under_r, under_g, under_b, under_a,  \
-		blend_r, blend_g, blend_b, blend_a ) 
+			private( i, Alpha_Div_256, \
+				  over_r,  over_g,  over_b,  over_a,   \
+				  under_r, under_g, under_b, under_a,  \
+				  blend_r, blend_g, blend_b, blend_a ) 
 	#endif
 
 	for ( i = 0; i < full_image_size; i += RGBA ) // SKIP 4 elements
@@ -1564,6 +1553,5 @@ void Create_AlphaBlend_LUT ( void )
 	
 	return EXIT_SUCCESS;
 }
-#endif
 
 
