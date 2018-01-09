@@ -272,7 +272,7 @@ int Init_234Composition  ( unsigned int, unsigned int, unsigned int, unsigned in
 int  Do_234Composition  ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, void*, MPI_Comm ); 
 			// my_rank, nnodes, width, height, pixel_ID, merge_ID, *my_image_byte, MPI_COMM 
 
-int  Do_234ZComposition  ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, void*, void*, MPI_Comm ); 
+int  Do_234ZComposition  ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, void*, const float*, MPI_Comm ); 
 			// my_rank, nnodes, width, height, pixel_ID, merge_ID, *my_image_byte, *my_image_depth, MPI_COMM 
 
 void* Do_234Composition_Ptr ( unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, void*, MPI_Comm ); 

@@ -142,7 +142,7 @@ int MyQSortComparator(const void* a , const void* b)
 int  Do_234ZComposition ( unsigned int my_rank, unsigned int nnodes, \
 						 unsigned int width, unsigned int height, \
 						 unsigned int pixel_ID, unsigned int merge_ID, \
-						 void *my_image, void *my_depth, MPI_Comm MPI_COMM_COMPOSITION )
+						 void *my_image, const float *my_depth, MPI_Comm MPI_COMM_COMPOSITION )
 {
 	unsigned int send_rank;
 	unsigned int recv_rank;
