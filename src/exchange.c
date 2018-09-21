@@ -127,22 +127,22 @@ int dsend3_rgba_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 		}
 		#endif
 
-		ds_blnd_image_ptr = temp_image;
+		ds_blnd_image_ptr = my_image;
 		ds_recv_image_ptr = temp_image;
 
 		#ifdef _NOBLEND
 		#else
 		if ( image_type == RGBA32 ) // RGBA32
 		{
-			composite_alpha_rgba32 ( temp_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
+			composite_alpha_rgba32 ( my_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
 		} 
 		else if ( image_type == RGBA56 ) // RGBA56
 		{
-			composite_alpha_rgba56 ( temp_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
+			composite_alpha_rgba56 ( my_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
 		}
 		else if ( image_type == RGBA64 ) // RGBA64
 		{
-			composite_alpha_rgba64 ( temp_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
+			composite_alpha_rgba64 ( my_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
 		}
 		#endif
 
@@ -433,22 +433,22 @@ int dsend3_rgbaz_BYTE ( unsigned int my_rank, unsigned int nnodes, \
 		}
 		#endif
 
-		ds_blnd_image_ptr = temp_image;
+		ds_blnd_image_ptr = my_image;
 		ds_recv_image_ptr = temp_image;
 
 		#ifdef _NOBLEND
 		#else
 		if ( image_type == RGBAZ64 ) // RGBAZ64
 		{
-			composite_alpha_rgbaz64 ( temp_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
+			composite_alpha_rgbaz64 ( my_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
 		}
 		else if ( image_type == RGBAZ88 ) // RGBAZ88
 		{
-			composite_alpha_rgbaz88 ( temp_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
+			composite_alpha_rgbaz88 ( my_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
 		}
 		else if ( image_type == RGBAZ96 ) // RGBAZ96
 		{
-			composite_alpha_rgbaz96 ( temp_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
+			composite_alpha_rgbaz96 ( my_image, ds_recv_image_ptr, ds_blnd_image_ptr, ds_image_size );
 		}
 		#endif
 	}
