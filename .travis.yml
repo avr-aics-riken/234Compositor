@@ -1,0 +1,22 @@
+language: c
+
+os:
+  - linux
+  - osx
+
+compiler: 
+   - gcc
+
+sudo: required
+
+before_script:
+  - chmod +x ./travis_setup.sh
+  - ./travis_setup.sh
+  - export OMPI_CC=gcc-4.8
+  - export OMPI_CXX=g++4.8
+  - export CC=mpicc
+  - export CXX=mpicxx
+
+script:
+  - ./configure
+  - make

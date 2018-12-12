@@ -19,15 +19,14 @@
 // ======================================
 //		Function Prototypes
 // ======================================
-int composite_alpha_rgba32   ( BYTE* , BYTE* , BYTE* , unsigned int );	// Alpha-blend compositing (RGBA32 Pixels)
-int composite_alpha_rgbaz64  ( BYTE* , BYTE* , BYTE* , unsigned int );	// Alpha-blend compositing (RGBA64 Pixels)
-int composite_alpha_rgba128  ( float*, float*, float*, unsigned int );	// Alpha-blend compositing (RGBA128 Pixels)
-int composite_alpha_rgbaz160 ( float*, float*, float*, unsigned int );	// Alpha-blend compositing (RGBAZ160 Pixels)
+int composite_alpha_rgba32    ( BYTE* , BYTE* , BYTE* , unsigned int );	// Alpha-blend compositing (RGBA32 Pixels)
+int composite_alpha_rgba32f   ( BYTE* , BYTE* , BYTE* , unsigned int );	// Alpha-blend compositing (RGBA32 Pixels)
+int composite_alpha_rgbaz64   ( BYTE* , BYTE* , BYTE* , unsigned int );	// Alpha-blend compositing (RGBA64 Pixels)
+int composite_alpha_rgba128   ( float*, float*, float*, unsigned int );	// Alpha-blend compositing (RGBA128 Pixels)
+int composite_alpha_rgbaz160  ( float*, float*, float*, unsigned int );	// Alpha-blend compositing (RGBAZ160 Pixels)
 
-#ifdef _LUTBLEND
 void Create_AlphaBlend_LUT ( void ); // Generate Alpha Blending Look Up Table
 int composite_alpha_rgba32_LUT ( BYTE* , BYTE* , BYTE* , unsigned int ); // Alpha-blend compositing (RGBA32 Pixels)
-#endif
 
 #ifdef C99
  int composite_alpha_rgba56   ( BYTE* restrict, BYTE* restrict, BYTE* restrict, unsigned int  ); // Alpha-blend compositing (RGBA56 Pixels)
